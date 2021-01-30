@@ -51,7 +51,7 @@ namespace TableService.Core.Utility
 
             var hash = HashPassword(password, storedSalt);
 
-            return (hash == storedHash);
+            return (hash == digest);
         }
     }
 }

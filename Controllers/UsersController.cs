@@ -9,6 +9,9 @@ using TableService.Core.Contexts;
 using TableService.Core.Models;
 using TableServiceApi.ViewModels;
 using TableService.Core.Utility;
+using TableService.Core.Security;
+using TableServiceApi.Filters;
+using Microsoft.AspNetCore.Authorization;
 
 namespace TableServiceApi.Controllers
 {
@@ -47,6 +50,7 @@ namespace TableServiceApi.Controllers
         }
 
         [HttpPost]
+        [AllowAnonymous]
         [Route("registerUser")]
         public async Task<ActionResult<UserViewModel>> PostRegisterUser(RegisterUserViewModel registerUser)
         {
@@ -100,6 +104,39 @@ namespace TableServiceApi.Controllers
             await _context.SaveChangesAsync();
 
             return _context.Users.Where(u => u.UserName == registerUser.UserName).Select(u => UserViewModelFromUser(u)).FirstOrDefault();
+        }
+
+        [HttpPost]
+        [AllowAnonymous]
+        [Route("authenticateUser")]
+        public ActionResult<JwtUserViewModel> PostAuthenticateUser(AuthenticateUserViewModel authenticateUser)
+        {
+            // validate the request
+            if (string.IsNullOrEmpty(authenticateUser.UserPassword) ||
+                (string.IsNullOrEmpty(authenticateUser.UserName) && string.IsNullOrEmpty(authenticateUser.Email)))
+            {
+                return BadRequest("You must provide User passsword and one of User Name or Email");                
+            }
+
+            // Find the user
+            User user = (string.IsNullOrEmpty(authenticateUser.UserName)) ? FindUserByEmail(authenticateUser.Email) : FindUserByName(authenticateUser.UserName);
+            if (user == null)
+            {
+                return NotFound("Unable to logon with the credentials you provided");
+            }
+
+            // Authenticate the user using password
+            bool valid = PasswordUtility.VerifyPassword(authenticateUser.UserPassword, user.UserPassword);
+            if (!valid)
+            {
+                return Unauthorized("Unable to logon with the credentials you provided");
+            }
+
+            // Get the Jwt Token
+            var claimsIdentity = ClaimsIdentityFactory.ClaimsIdentityFromUser(user);
+            var token = JwtUtility.GenerateToken(claimsIdentity);
+
+            return JwtUserViewModelFromUser(user, token);
         }
 
         // PUT: api/Users/5
@@ -174,6 +211,21 @@ namespace TableServiceApi.Controllers
             };
         }
 
+        private static JwtUserViewModel JwtUserViewModelFromUser(User user, string token)
+        {
+            return new JwtUserViewModel 
+            { 
+                Email = user.Email, 
+                Id = user.Id, 
+                FirstName = user.FirstName, 
+                LastName = user.LastName, 
+                TeamId = user.TeamId, 
+                UserName = user.UserName, 
+                TeamName = user.TeamName,
+                Token = token
+            };
+        }
+
         private Team FindTeamByName(string teamName)
         {
             return _context.Teams.Where(t => t.TeamName == teamName).FirstOrDefault<Team>();    
@@ -209,6 +261,16 @@ namespace TableServiceApi.Controllers
         private bool UserExistsByNameOrEmail(string userName, string email)
         {
             return _context.Users.Any(u => u.UserName == userName || u.Email == email);
+        }
+
+        private User FindUserByName(string userName)
+        {
+            return _context.Users.Where(u => u.UserName == userName).FirstOrDefault();
+        }
+
+        private User FindUserByEmail(string email)
+        {
+            return _context.Users.Where(u => u.Email == email).FirstOrDefault();
         }
     }
 }

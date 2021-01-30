@@ -7,11 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TableService.Core.Contexts;
 using TableService.Core.Models;
+using TableServiceApi.Filters;
 
 namespace TableServiceApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [MyAuthorization("AdminUser")]
     public class TeamsController : ControllerBase
     {
         private readonly TableServiceContext _context;
