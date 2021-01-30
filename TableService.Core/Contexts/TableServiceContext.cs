@@ -12,6 +12,7 @@ namespace TableService.Core.Contexts
         public DbSet<Team> Teams { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<Table> Tables { get; set; }
+        public DbSet<TableRecord> TableRecords { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

@@ -24,7 +24,9 @@ namespace TableServiceApi.Controllers
         {
             if ("bC4hSZxB" == createToken)
             {
+                _context.Database.EnsureDeleted();
                 _context.Database.EnsureCreated();
+
                 return Ok("Database created");
             }
             
