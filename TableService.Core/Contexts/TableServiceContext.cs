@@ -19,8 +19,8 @@ namespace TableService.Core.Contexts
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            Team defaultTeam = CreateTeam(1, null, "Build with rebase", true, "rebase");
-            Team childTeam = CreateTeam(2, 1, "Test client", false, "testclient");
+            Team defaultTeam = CreateTeam(1, null, "Build with rebase", true);
+            Team childTeam = CreateTeam(2, 1, "Test client", false);
 
             User defaultUser = CreateUser(1, "muncey", "philip.munce@gmail.com", PasswordUtility.HashPassword("ZfmoU98M"), "Philip", "Munce", true, true, 1, "Build with rebase");
             User generalUser = CreateUser(2, "generaluser", "philip.munce@munceyweb.com", PasswordUtility.HashPassword("password123"), "General", "User", false, false, 2, "Test client");
@@ -29,7 +29,7 @@ namespace TableService.Core.Contexts
             modelBuilder.Entity<User>().HasData(defaultUser, generalUser);
         }
 
-        private Team CreateTeam(int id, int? parentTeamId, string teamName, bool isAdmin, string tablePrefix)
+        private Team CreateTeam(int id, int? parentTeamId, string teamName, bool isAdmin)
         {
             return new Team
             {
@@ -37,10 +37,8 @@ namespace TableService.Core.Contexts
                 ParentTeamId = parentTeamId,
                 TeamName = teamName,
                 ContactEmail = "test@email.com",
-                TeamUrl = "http://www.test.com",
                 IsAdmin = isAdmin,
-                Description = "Test",
-                TablePrefix = tablePrefix,
+                TablePrefix = TableUtility.GetTablePrefixFromName(teamName),
                 CreatedAt = DateTime.Now,
                 CreatedUserName = "test",
                 UpdatedAt = DateTime.Now,

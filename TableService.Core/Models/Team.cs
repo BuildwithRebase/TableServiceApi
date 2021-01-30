@@ -12,10 +12,9 @@ namespace TableService.Core.Models
         public int Id { get; set; }
         public int? ParentTeamId { get; set; }
         public string TeamName { get; set; }
+        public string ContactUserName { get; set; }
         public string ContactEmail { get; set; }
-        public string TeamUrl { get; set; }
         public bool IsAdmin { get; set; }
-        public string Description { get; set; }
         public string TablePrefix { get; set; }
         public string CreatedUserName { get; set; }
         public string UpdatedUserName { get; set; }

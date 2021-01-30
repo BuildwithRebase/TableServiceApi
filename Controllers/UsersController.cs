@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using TableService.Core.Contexts;
 using TableService.Core.Models;
 using TableServiceApi.ViewModels;
+using TableService.Core.Utility;
 
 namespace TableServiceApi.Controllers
 {
@@ -45,6 +46,62 @@ namespace TableServiceApi.Controllers
             return new UserViewModel { Email = user.Email, Id = user.Id, FirstName = user.FirstName, LastName = user.LastName, TeamId = user.TeamId, UserName = user.UserName, TeamName = user.TeamName };
         }
 
+        [HttpPost]
+        [Route("registerUser")]
+        public async Task<ActionResult<UserViewModel>> PostRegisterUser(RegisterUserViewModel registerUser)
+        {
+            // validate the request
+            if (string.IsNullOrEmpty(registerUser.UserName) ||
+                string.IsNullOrEmpty(registerUser.UserPassword) ||
+                string.IsNullOrEmpty(registerUser.Email) ||
+                string.IsNullOrEmpty(registerUser.TeamName))
+            {
+                return BadRequest("You must provide User name, User password, Email and Team name");                
+            }
+
+            if (UserExistsByNameOrEmail(registerUser.UserName, registerUser.Email))
+            {
+                return Conflict("A user with user name: " + registerUser.UserName + " or email: " + registerUser.Email + " already exists");
+            }
+
+            Team team = FindTeamByName(registerUser.TeamName);
+            bool isAdmin = false;
+            if (team == null)
+            {
+                isAdmin = true;
+                team = CreateTeam(registerUser.TeamName, 1, registerUser.Email, registerUser.UserName);
+            }
+
+            User user = new User
+            {
+                UserName = registerUser.UserName,
+                Email = registerUser.Email,
+                UserPassword = PasswordUtility.HashPassword(registerUser.UserPassword),
+                IsAdmin = isAdmin,
+                IsSuperAdmin = false,
+                TeamId = team.Id,
+                TeamName = team.TeamName,
+                CreatedUserName = registerUser.UserName,
+                UpdatedUserName = registerUser.UserName,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+
+            if (!string.IsNullOrEmpty(registerUser.FirstName))
+            {
+                user.FirstName = registerUser.FirstName;
+            }
+            if (!string.IsNullOrEmpty(registerUser.LastName))
+            {
+                user.LastName = registerUser.LastName;
+            }
+
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            return _context.Users.Where(u => u.UserName == registerUser.UserName).Select(u => UserViewModelFromUser(u)).FirstOrDefault();
+        }
+
         // PUT: api/Users/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         //[HttpPut("{id}")]
@@ -69,7 +126,7 @@ namespace TableServiceApi.Controllers
         //        }
         //        else
         //        {
-        //            throw;
+        //       s     throw;
         //        }
         //    }
 
@@ -103,9 +160,55 @@ namespace TableServiceApi.Controllers
         //    return NoContent();
         //}
 
+        private static UserViewModel UserViewModelFromUser(User user)
+        {
+            return new UserViewModel 
+            { 
+                Email = user.Email, 
+                Id = user.Id, 
+                FirstName = user.FirstName, 
+                LastName = user.LastName, 
+                TeamId = user.TeamId, 
+                UserName = user.UserName, 
+                TeamName = user.TeamName 
+            };
+        }
+
+        private Team FindTeamByName(string teamName)
+        {
+            return _context.Teams.Where(t => t.TeamName == teamName).FirstOrDefault<Team>();    
+        }
+
+        private Team CreateTeam(string teamName, int? parentTeamId, string contactEmail, string userName)
+        {
+            Team team = new Team 
+            {
+                ParentTeamId = parentTeamId,
+                TeamName = teamName,
+                ContactUserName = userName,
+                ContactEmail = contactEmail,
+                TablePrefix = TableUtility.GetTablePrefixFromName(teamName),
+                IsAdmin = false,
+                CreatedUserName = userName,
+                UpdatedUserName = userName,
+                CreatedAt = DateTime.Now,
+                UpdatedAt = DateTime.Now
+            };
+            _context.Teams.Add(team);
+            _context.SaveChanges();
+
+            return FindTeamByName(teamName);
+        }
+        
+
         private bool UserExists(int id)
         {
             return _context.Users.Any(e => e.Id == id);
+        }
+
+        private bool UserExistsByNameOrEmail(string userName, string email)
+        {
+            return _context.Users.Any(u => u.UserName == userName || u.Email == email);
         }
     }
 }
