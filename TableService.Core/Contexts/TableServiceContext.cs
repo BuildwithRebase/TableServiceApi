@@ -11,6 +11,7 @@ namespace TableService.Core.Contexts
     {
         public DbSet<Team> Teams { get; set; }
         public DbSet<User> Users { get; set; }
+        public DbSet<Table> Tables { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -25,8 +26,11 @@ namespace TableService.Core.Contexts
             User defaultUser = CreateUser(1, "muncey", "philip.munce@gmail.com", PasswordUtility.HashPassword("ZfmoU98M"), "Philip", "Munce", true, true, 1, "Build with rebase");
             User generalUser = CreateUser(2, "generaluser", "philip.munce@munceyweb.com", PasswordUtility.HashPassword("password123"), "General", "User", false, false, 2, "Test client");
 
+            Table tasksTable = CreateTable(1, 1, "Build with rebase", "tasks", "Tasks", "task_name", "task_status", "assigned_to", "due_date", "comments");
+
             modelBuilder.Entity<Team>().HasData(defaultTeam, childTeam);
             modelBuilder.Entity<User>().HasData(defaultUser, generalUser);
+            modelBuilder.Entity<Table>().HasData(tasksTable);
         }
 
         private Team CreateTeam(int id, int? parentTeamId, string teamName, bool isAdmin)
@@ -66,5 +70,32 @@ namespace TableService.Core.Contexts
                 UpdatedUserName = "test"
             };
         }
+
+        private Table CreateTable(int id, int teamId, string teamName, string tableName, string tableLabel, string field1, string field2, string field3, string field4, string field5)
+        {
+            return new Table
+            {
+                Id = id,
+                TeamId = teamId,
+                TeamName = teamName,
+                TableName = tableName,
+                TableLabel = tableLabel,
+                Field1Name = field1,
+                Field1Type = "string",
+                Field2Name = field2,
+                Field2Type = "string",
+                Field3Name = field3,
+                Field3Type = "string",
+                Field4Name = field4,
+                Field4Type = "string",
+                Field5Name = field5,
+                Field5Type = "string",
+                CreatedAt = DateTime.Now,
+                CreatedUserName = "muncey",
+                UpdatedAt = DateTime.Now,
+                UpdatedUserName = "muncey"
+            };
+        }
+        
     }
 }

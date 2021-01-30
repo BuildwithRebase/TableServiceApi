@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using TableService.Core.Contexts;
 
 namespace TableServiceApi.Controllers
 {
@@ -11,9 +12,22 @@ namespace TableServiceApi.Controllers
     [ApiController]
     public class PingController : ControllerBase
     {
-        [HttpGet]
-        public ActionResult<string> GetPing()
+        private readonly TableServiceContext _context;
+
+        public PingController(TableServiceContext context)
         {
+            _context = context;
+        }
+
+        [HttpGet]
+        public ActionResult<string> GetPing([FromQuery] string createToken)
+        {
+            if ("bC4hSZxB" == createToken)
+            {
+                _context.Database.EnsureCreated();
+                return Ok("Database created");
+            }
+            
             return Ok("ok");
         }
     }

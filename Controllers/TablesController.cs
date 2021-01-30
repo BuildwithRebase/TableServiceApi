@@ -8,55 +8,53 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TableService.Core.Contexts;
 using TableService.Core.Models;
-using TableServiceApi.Filters;
 
 namespace TableServiceApi.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
-    //[MyAuthorization("AdminUser")]
-    public class TeamsController : ControllerBase
+    public class TablesController : ControllerBase
     {
         private readonly TableServiceContext _context;
 
-        public TeamsController(TableServiceContext context)
+        public TablesController(TableServiceContext context)
         {
             _context = context;
         }
 
-        // GET: api/Teams
+        // GET: api/Tables
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Team>>> GetTeams()
+        public async Task<ActionResult<IEnumerable<Table>>> GetTables()
         {
-            return await _context.Teams.ToListAsync();
+            return await _context.Tables.ToListAsync();
         }
 
-        // GET: api/Teams/5
+        // GET: api/Tables/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Team>> GetTeam(int id)
+        public async Task<ActionResult<Table>> GetTable(int id)
         {
-            var team = await _context.Teams.FindAsync(id);
+            var table = await _context.Tables.FindAsync(id);
 
-            if (team == null)
+            if (table == null)
             {
                 return NotFound();
             }
 
-            return team;
+            return table;
         }
 
-        // PUT: api/Teams/5
+        // PUT: api/Tables/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTeam(int id, Team team)
+        public async Task<IActionResult> PutTable(int id, Table table)
         {
-            if (id != team.Id)
+            if (id != table.Id)
             {
                 return BadRequest();
             }
 
-            _context.Entry(team).State = EntityState.Modified;
+            _context.Entry(table).State = EntityState.Modified;
 
             try
             {
@@ -64,7 +62,7 @@ namespace TableServiceApi.Controllers
             }
             catch (DbUpdateConcurrencyException)
             {
-                if (!TeamExists(id))
+                if (!TableExists(id))
                 {
                     return NotFound();
                 }
@@ -77,36 +75,36 @@ namespace TableServiceApi.Controllers
             return NoContent();
         }
 
-        // POST: api/Teams
+        // POST: api/Tables
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Team>> PostTeam(Team team)
+        public async Task<ActionResult<Table>> PostTable(Table table)
         {
-            _context.Teams.Add(team);
+            _context.Tables.Add(table);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetTeam", new { id = team.Id }, team);
+            return CreatedAtAction("GetTable", new { id = table.Id }, table);
         }
 
-        // DELETE: api/Teams/5
+        // DELETE: api/Tables/5
         [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteTeam(int id)
+        public async Task<IActionResult> DeleteTable(int id)
         {
-            var team = await _context.Teams.FindAsync(id);
-            if (team == null)
+            var table = await _context.Tables.FindAsync(id);
+            if (table == null)
             {
                 return NotFound();
             }
 
-            _context.Teams.Remove(team);
+            _context.Tables.Remove(table);
             await _context.SaveChangesAsync();
 
             return NoContent();
         }
 
-        private bool TeamExists(int id)
+        private bool TableExists(int id)
         {
-            return _context.Teams.Any(e => e.Id == id);
+            return _context.Tables.Any(e => e.Id == id);
         }
     }
 }
