@@ -73,7 +73,7 @@ namespace TableService.Core.Security
                 return AuthenticateResult.Fail("Session revoked");
             }
 
-            Context.Items.Add("session", session);
+            Context.Items.Add("api_session", session);
 
             var ticket = new AuthenticationTicket(principal, Scheme.Name);
             return AuthenticateResult.Success(ticket);

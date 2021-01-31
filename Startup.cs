@@ -19,6 +19,7 @@ using TableService.Core.Contexts;
 using TableService.Core.Security;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
+using TableServiceApi.TableService.Core.Contexts;
 
 namespace TableServiceApi
 {
@@ -54,7 +55,9 @@ namespace TableServiceApi
                     Type = SecuritySchemeType.ApiKey
                 });
             });
+            services.AddHttpContextAccessor();
             services.AddDbContext<TableServiceContext>();
+            services.AddDbContext<TeamDbContext>();
             var tokenKey = Configuration.GetValue<string>("TokenKey");
             var key = Encoding.ASCII.GetBytes(tokenKey);
             
