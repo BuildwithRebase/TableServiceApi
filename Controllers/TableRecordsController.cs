@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using TableService.Core.Contexts;
 using TableService.Core.Models;
 using TableServiceApi.ViewModels;
+using System.Reflection;
 
 namespace TableServiceApi.Controllers
 {
@@ -25,9 +26,21 @@ namespace TableServiceApi.Controllers
         // GET: api/TableRecords/search
         [HttpGet]
         [Route("search")]
-        public async Task<ActionResult<IEnumerable<TableRecord>>> GetTableRecords([FromQuery] TableRecordSearchViewModel searchViewModel)
+        public async Task<ActionResult<IEnumerable<TableRecordSearchResponseViewModel>>> GetTableRecords([FromQuery] TableRecordSearchViewModel searchViewModel)
         {
-            return await _context.TableRecords.Where(tr => tr.TeamName == searchViewModel.TeamName && tr.TableName == searchViewModel.TableName).Skip(0).Take(10).ToListAsync();
+            // get the table record
+            var table = await _context.Tables.Where(tbl => tbl.TeamName == searchViewModel.TeamName && tbl.TableName == searchViewModel.TableName).FirstOrDefaultAsync();
+            if (table == null)
+            {
+                return NotFound("Table " + searchViewModel.TableName + " not found");
+            }
+
+            var records = await _context.TableRecords
+                    .Where(tr => tr.TeamName == searchViewModel.TeamName && tr.TableName == searchViewModel.TableName)
+                    .Skip(0)
+                    .Take(10)
+                    .Select(record => null)
+                    
         }
 
         // GET: api/TableRecords/5
@@ -105,6 +118,25 @@ namespace TableServiceApi.Controllers
         private bool TableRecordExists(int id)
         {
             return _context.TableRecords.Any(e => e.Id == id);
+        }
+
+        private static Dictionary<string, object> MapSearchResponse(Table table, TableRecord tableRecord)
+        {
+            Type type = typeof(Table);
+            Dictionary<string, object> result = new Dictionary<string, object>();
+            for (int i=1; i<5; i++)
+            {
+                var fieldName = "Field" + i + "Name";
+                var fieldType = "Field" + i + "Type";
+
+                var prop = type.GetProperty(fieldName);
+                var fieldNameValue = prop.GetValue(table);
+                if (fieldNameValue != null)
+                {
+
+                }
+            }
+            return result;
         }
     }
 }

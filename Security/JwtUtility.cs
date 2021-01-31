@@ -36,7 +36,7 @@ namespace TableService.Core.Security
         	return tokenHandler.WriteToken(token);
         }
 
-        public static bool ValidateCurrentToken(string token)
+        public static ClaimsPrincipal ValidateCurrentToken(string token)
         {
             var mySecurityKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(mySecret));
 
@@ -44,7 +44,7 @@ namespace TableService.Core.Security
 
             try
             {
-                tokenHandler.ValidateToken(token, new TokenValidationParameters
+                return tokenHandler.ValidateToken(token, new TokenValidationParameters
                 {
                     ValidateIssuerSigningKey = true,
                     ValidateIssuer = true,
@@ -56,9 +56,8 @@ namespace TableService.Core.Security
             }
             catch
             {
-                return false;
+                return null;
             }
-            return true;
         }
     }
 }

@@ -31,7 +31,7 @@ namespace TableServiceApi.Filters
             }
 
             var token = value.ToArray()[0];
-            if (!JwtUtility.ValidateCurrentToken(token))
+            if (JwtUtility.ValidateCurrentToken(token) == null)
             {
                 filterContext.Result = new UnauthorizedResult();
             }

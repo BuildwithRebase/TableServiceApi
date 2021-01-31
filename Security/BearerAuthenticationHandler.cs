@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.IdentityModel.Tokens;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -57,17 +58,11 @@ namespace TableService.Core.Security
 
         private AuthenticateResult validateToken(string token)
         {
-            bool valid = JwtUtility.ValidateCurrentToken(token);
-            if (!valid)
+            ClaimsPrincipal principal = JwtUtility.ValidateCurrentToken(token);
+            if (principal == null)
             {
                 return AuthenticateResult.Fail("Unauthorized");
             }
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, token)
-            };
-            var identity = new ClaimsIdentity(claims, Scheme.Name);
-            var principal = new System.Security.Principal.GenericPrincipal(identity, null);
             var ticket = new AuthenticationTicket(principal, Scheme.Name);
             return AuthenticateResult.Success(ticket);
         }
