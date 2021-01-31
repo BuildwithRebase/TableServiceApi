@@ -13,6 +13,7 @@ namespace TableService.Core.Contexts
         public DbSet<User> Users { get; set; }
         public DbSet<Table> Tables { get; set; }
         public DbSet<TableRecord> TableRecords { get; set; }
+        public DbSet<ApiSession> ApiSessions { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {

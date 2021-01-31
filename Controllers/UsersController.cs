@@ -12,6 +12,7 @@ using TableService.Core.Utility;
 using TableService.Core.Security;
 using TableServiceApi.Filters;
 using Microsoft.AspNetCore.Authorization;
+using System.Text;
 
 namespace TableServiceApi.Controllers
 {
@@ -110,7 +111,7 @@ namespace TableServiceApi.Controllers
         [HttpPost]
         [AllowAnonymous]
         [Route("authenticateUser")]
-        public ActionResult<JwtUserViewModel> PostAuthenticateUser(AuthenticateUserViewModel authenticateUser)
+        public async Task<ActionResult<JwtUserViewModel>> PostAuthenticateUser(AuthenticateUserViewModel authenticateUser)
         {
             // validate the request
             if (string.IsNullOrEmpty(authenticateUser.UserPassword) ||
@@ -136,6 +137,16 @@ namespace TableServiceApi.Controllers
             // Get the Jwt Token
             var claimsIdentity = ClaimsIdentityFactory.ClaimsIdentityFromUser(user);
             var token = JwtUtility.GenerateToken(claimsIdentity);
+
+            // Invalidate any previous sessions
+            InvalidateSessions(user.UserName);
+
+
+            // Save the Api Session
+            CreateApiSession(user, token);
+
+            // Save changes to the database
+            await _context.SaveChangesAsync();
 
             return JwtUserViewModelFromUser(user, token);
         }
@@ -214,15 +225,16 @@ namespace TableServiceApi.Controllers
 
         private static JwtUserViewModel JwtUserViewModelFromUser(User user, string token)
         {
-            return new JwtUserViewModel 
-            { 
-                Email = user.Email, 
-                Id = user.Id, 
-                FirstName = user.FirstName, 
-                LastName = user.LastName, 
-                TeamId = user.TeamId, 
-                UserName = user.UserName, 
+            return new JwtUserViewModel
+            {
+                Email = user.Email,
+                Id = user.Id,
+                FirstName = user.FirstName,
+                LastName = user.LastName,
+                TeamId = user.TeamId,
+                UserName = user.UserName,
                 TeamName = user.TeamName,
+                UserRoles = FormatUserRoles(user),
                 Token = token
             };
         }
@@ -272,6 +284,57 @@ namespace TableServiceApi.Controllers
         private User FindUserByEmail(string email)
         {
             return _context.Users.Where(u => u.Email == email).FirstOrDefault();
+        }
+
+        /// <summary>
+        /// Invalidate any old sessions
+        /// </summary>
+        /// <param name="userName"></param>
+        private void InvalidateSessions(string userName)
+        {
+            var sessions = _context.ApiSessions.Where(session => session.UserName == userName && session.IsActive).ToList();
+            if (sessions.Count == 0)
+            {
+                return;
+            }
+            foreach (var session in sessions)
+            {
+                session.IsActive = false;
+
+                _context.ApiSessions.Update(session);
+            }
+        }
+
+        private void CreateApiSession(User user, string token)
+        {
+            ApiSession session = new ApiSession
+            {
+                Token = token,
+                UserName = user.UserName,
+                TeamId = user.TeamId,
+                TeamName = user.TeamName,
+                IsActive = true,
+                CreatedAt = DateTime.Now
+            };
+
+            session.UserRoles = FormatUserRoles(user);
+
+            _context.ApiSessions.Add(session);
+        }
+
+        private static string FormatUserRoles(User user)
+        {
+            StringBuilder roles = new StringBuilder();
+            roles.Append("GeneralUser");
+            if (user.IsAdmin)
+            {
+                roles.Append(",").Append("Admin");
+            }
+            if (user.IsSuperAdmin)
+            {
+                roles.Append(",").Append("SuperAdmin");
+            }
+            return roles.ToString();
         }
     }
 }
