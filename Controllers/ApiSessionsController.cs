@@ -7,8 +7,10 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 using TableService.Core.Contexts;
 using TableService.Core.Models;
+using TableServiceApi.ViewModels;
 
 namespace TableServiceApi.Controllers
 {
@@ -26,86 +28,74 @@ namespace TableServiceApi.Controllers
 
         // GET: api/ApiSessions
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ApiSession>>> GetApiSessions()
+        public async Task<ActionResult<PagedResponseViewModel>> GetApiSessions([FromQuery] int? page, [FromQuery] int? pageSize)
         {
-            return await _context.ApiSessions.ToListAsync();
+            var apiSession = (ApiSession)HttpContext.Items["api_session"];
+            if (apiSession == null)
+            {
+                return Unauthorized();
+            }
+
+            var teamId = apiSession.TeamId;
+
+            int take = (pageSize == null) ? 10 : (int)pageSize;
+            int skip = (page == null) ? 0 : ((int)page - 1) * take;
+
+
+            int totalCount = await _context.ApiSessions.Where(session => session.TeamId == teamId).CountAsync();
+            var data = await _context.ApiSessions.Where(session => session.TeamId == teamId).Skip(skip).Take(take).ToListAsync();
+
+            var response = new PagedResponseViewModel(page ?? 1, pageSize ?? 10, totalCount, data);
+
+            return response;
         }
 
         // GET: api/ApiSessions/5
         [HttpGet("{id}")]
         public async Task<ActionResult<ApiSession>> GetApiSession(int id)
         {
-            var apiSession = await _context.ApiSessions.FindAsync(id);
-
+            var apiSession = (ApiSession)HttpContext.Items["api_session"];
             if (apiSession == null)
+            {
+                return Unauthorized();
+            }
+
+            var teamId = apiSession.TeamId;
+
+            var session = await _context.ApiSessions.Where(s => s.TeamId == teamId && s.Id == id).FirstOrDefaultAsync();
+
+            if (session == null)
             {
                 return NotFound();
             }
 
-            return apiSession;
+            return session;
         }
 
-        // PUT: api/ApiSessions/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPut("{id}")]
-        public async Task<IActionResult> PutApiSession(int id, ApiSession apiSession)
+        [HttpPut("{id}/revoke")]
+        public async Task<IActionResult> RevokeSession(int id)
         {
-            if (id != apiSession.Id)
-            {
-                return BadRequest();
-            }
-
-            _context.Entry(apiSession).State = EntityState.Modified;
-
-            try
-            {
-                await _context.SaveChangesAsync();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ApiSessionExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return NoContent();
-        }
-
-        // POST: api/ApiSessions
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        [HttpPost]
-        public async Task<ActionResult<ApiSession>> PostApiSession(ApiSession apiSession)
-        {
-            _context.ApiSessions.Add(apiSession);
-            await _context.SaveChangesAsync();
-
-            return CreatedAtAction("GetApiSession", new { id = apiSession.Id }, apiSession);
-        }
-
-        // DELETE: api/ApiSessions/5
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> DeleteApiSession(int id)
-        {
-            var apiSession = await _context.ApiSessions.FindAsync(id);
+            var apiSession = (ApiSession)HttpContext.Items["api_session"];
             if (apiSession == null)
+            {
+                return Unauthorized();
+            }
+
+            var teamId = apiSession.TeamId;
+
+            var session = await _context.ApiSessions.Where(s => s.TeamId == teamId && s.Id == id).FirstOrDefaultAsync();
+
+            if (session == null)
             {
                 return NotFound();
             }
 
-            _context.ApiSessions.Remove(apiSession);
+            session.IsActive = false;
+            _context.Entry(session).State = EntityState.Modified;
+
             await _context.SaveChangesAsync();
 
-            return NoContent();
-        }
-
-        private bool ApiSessionExists(int id)
-        {
-            return _context.ApiSessions.Any(e => e.Id == id);
+            return Ok();
         }
     }
 }

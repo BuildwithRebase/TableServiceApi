@@ -26,12 +26,22 @@ namespace TableService.Core.Security
 
         protected override async Task<AuthenticateResult> HandleAuthenticateAsync()
         {
-            if (!Request.Headers.ContainsKey("Authorization"))
+            string authorizationHeader = null;
+            if (Request.Cookies.ContainsKey("Authorization"))
+            {
+                authorizationHeader = Request.Cookies["Authorization"];
+            }
+
+            if (authorizationHeader == null && !Request.Headers.ContainsKey("Authorization"))
             {
                 return AuthenticateResult.Fail("Unauthorized");
             }
 
-            string authorizationHeader = Request.Headers["Authorization"];
+            if (authorizationHeader == null)
+            {
+                authorizationHeader = Request.Headers["Authorization"];
+            }
+
             if (string.IsNullOrEmpty(authorizationHeader))
             {
                 return AuthenticateResult.NoResult();

@@ -8,7 +8,6 @@ namespace TableService.Core.Models
     public class ApiSession
     {
         public int Id { get; set; }
-        public string Token { get; set; }
         public string UserName { get; set; }
         public int TeamId { get; set; }
         public string TeamName { get; set; }
