@@ -62,6 +62,10 @@ namespace TableServiceApi.Controllers
                     {
                         DynamicClassUtility.SetFieldValue(type, record, field.FieldName, DateTime.Now);
                     }
+                    else if (field.FieldType == "number")
+                    {
+                        DynamicClassUtility.SetFieldValue(type, record, field.FieldName, 0);
+                    }
                     else
                     {
                         DynamicClassUtility.SetFieldValue(type, record, field.FieldName, field.FieldType);
@@ -123,8 +127,6 @@ namespace TableServiceApi.Controllers
             var fields = table.ToFieldDefinitions();
             var objectType = DynamicClassUtility.CreateType(Char.ToUpperInvariant(tableName[0]) + tableName.Substring(1), fields);
 
-
-
             var data = _teamDbContext.TableRecords
                 .Where(tbl => tbl.Id == id)
                 .Select(record => TableUtility.MapTableRecordToObject(tableName, record, objectType, fields))
@@ -154,7 +156,7 @@ namespace TableServiceApi.Controllers
                 return NotFound("Table: " + tableName + " not found");
             }
 
-            var tableRecord = TableUtility.CreateTableRecordFromTable(apiSession, table, data);
+            var tableRecord = TableUtility.CreateTableRecordFromTable(apiSession, table, data, false);
 
             _teamDbContext.Add(tableRecord);
             await _teamDbContext.SaveChangesAsync();
@@ -187,7 +189,7 @@ namespace TableServiceApi.Controllers
                 return NotFound("Table: " + tableName + " not found");
             }
 
-            var tableRecord = TableUtility.CreateTableRecordFromTable(apiSession, table, data);
+            var tableRecord = TableUtility.CreateTableRecordFromTable(apiSession, table, data, true);
 
             _teamDbContext.Entry(tableRecord).State = EntityState.Modified;
 

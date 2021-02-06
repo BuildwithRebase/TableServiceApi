@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using TableService.Core.Contexts;
+using TableService.Core.Models;
+using TableServiceApi.ViewModels;
 
 namespace TableServiceApi.Controllers
 {
@@ -20,17 +22,25 @@ namespace TableServiceApi.Controllers
         }
 
         [HttpGet]
-        public ActionResult<string> GetPing([FromQuery] string createToken)
+        public ActionResult<PingResponseViewModel> GetPing([FromQuery] string createToken)
         {
             if ("bC4hSZxB" == createToken)
             {
                 _context.Database.EnsureDeleted();
                 _context.Database.EnsureCreated();
 
-                return Ok("Database created");
+                return Ok(new PingResponseViewModel { Message = "Database created", Authorized = false });
             }
-            
-            return Ok("ok");
+
+            var apiSession = (ApiSession)HttpContext.Items["api_session"];
+            if (apiSession != null)
+            {
+                return Ok(new PingResponseViewModel { Message = "ok", Authorized = apiSession.IsActive });
+            }
+            else
+            {
+                return Ok(new PingResponseViewModel { Message = "ok", Authorized = false });
+            }            
         }
     }
 }
