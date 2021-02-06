@@ -445,17 +445,17 @@ var TsUsers = function (tsClient) {
             redirect: 'follow'
         };
 
-        fetch(this.tsClient.baseUrl + "Users/authenticateUser", requestOptions)
+        fetch(this.tsClient.baseUrl + "/Users/authenticateUser", requestOptions)
             .then(response => response.json())
             .then(result => apiHandleResult(arguments.callee.name, result))
             .catch(error => apiHandleError(arguments.callee.name, error));
     }
 
-    this.registerUser = function registerUser() {
+    this.registerUser = function registerUser(data) {
         var myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
 
-        var raw = JSON.stringify({ "id": -24146919, "userName": "reprehender", "userPassword": "cillum", "email": "ipsum velit in", "firstName": "anim aute nostrud ut", "lastName": "in magna deserunt ipsum", "teamName": "nisi in" });
+        var raw = JSON.stringify(data);
 
         var requestOptions = {
             method: 'POST',
@@ -464,7 +464,7 @@ var TsUsers = function (tsClient) {
             redirect: 'follow'
         };
 
-        fetch(this.tsClient.baseUrl + "Users/registerUser", requestOptions)
+        fetch(this.tsClient.baseUrl + "/Users/registerUser", requestOptions)
             .then(response => response.json())
             .then(result => apiHandleResult(arguments.callee.name, result))
             .catch(error => apiHandleError(arguments.callee.name, error));
@@ -480,7 +480,7 @@ var TsUsers = function (tsClient) {
             redirect: 'follow'
         };
 
-        fetch(this.tsClient.baseUrl + "Users/logout", requestOptions)
+        fetch(this.tsClient.baseUrl + "/Users/logout", requestOptions)
             .then(response => response.json())
             .then(result => apiHandleResult(arguments.callee.name, result))
             .catch(error => apiHandleError(arguments.callee.name, error));
