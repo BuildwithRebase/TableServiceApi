@@ -445,10 +445,8 @@ var TsUsers = function (tsClient) {
             redirect: 'follow'
         };
 
-        fetch(this.tsClient.baseUrl + "/Users/authenticateUser", requestOptions)
-            .then(response => response.json())
-            .then(result => apiHandleResult(arguments.callee.name, result))
-            .catch(error => apiHandleError(arguments.callee.name, error));
+        var url = '/Users/authenticateUser' + id;
+        return this.tsClient.internalFetch(arguments.callee.name, url, requestOptions);
     }
 
     this.registerUser = function registerUser(data) {
@@ -464,10 +462,8 @@ var TsUsers = function (tsClient) {
             redirect: 'follow'
         };
 
-        fetch(this.tsClient.baseUrl + "/Users/registerUser", requestOptions)
-            .then(response => response.json())
-            .then(result => apiHandleResult(arguments.callee.name, result))
-            .catch(error => apiHandleError(arguments.callee.name, error));
+        var url = '/Users/registerUser';
+        return this.tsClient.internalFetch(arguments.callee.name, url, requestOptions);
     }
 
     this.logout = function logout() {
@@ -480,10 +476,8 @@ var TsUsers = function (tsClient) {
             redirect: 'follow'
         };
 
-        fetch(this.tsClient.baseUrl + "/Users/logout", requestOptions)
-            .then(response => response.json())
-            .then(result => apiHandleResult(arguments.callee.name, result))
-            .catch(error => apiHandleError(arguments.callee.name, error));
+        var url = '/Users/logout';
+        return this.tsClient.internalFetch(arguments.callee.name, url, requestOptions);
     }
 }
 
