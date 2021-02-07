@@ -30,18 +30,47 @@ namespace TableServiceApi.Controllers
 
         // GET: api/Users
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<UserViewModel>>> GetUsers()
+        public async Task<ActionResult<PagedResponseViewModel>> GetUsers([FromQuery] int? page, [FromQuery] int? pageSize)
         {
-            IEnumerable<User> users = await _context.Users.ToListAsync();
+            var apiSession = (ApiSession)HttpContext.Items["api_session"];
+            if (apiSession == null)
+            {
+                return Unauthorized();
+            }
 
-            return users.Select(u => new UserViewModel { Email = u.Email, Id = u.Id, FirstName = u.FirstName, LastName = u.LastName, TeamId = u.TeamId, UserName = u.UserName, TeamName = u.TeamName }).ToList();
+            var teamId = apiSession.TeamId;
+
+            int take = (pageSize == null) ? 10 : (int)pageSize;
+            int skip = (page == null) ? 0 : ((int)page - 1) * take;
+
+
+            int totalCount = await _context.Users.Where(user => user.TeamId == teamId).CountAsync();
+            var data = await _context
+                .Users
+                .Where(user => user.TeamId == teamId)
+                .Skip(skip)
+                .Take(take)
+                .Select(u => new UserViewModel { Email = u.Email, Id = u.Id, FirstName = u.FirstName, LastName = u.LastName, TeamId = u.TeamId, UserName = u.UserName, TeamName = u.TeamName })
+                .ToListAsync();
+
+            var response = new PagedResponseViewModel(page ?? 1, pageSize ?? 10, totalCount, data);
+
+            return response;
         }
 
         // GET: api/Users/5
         [HttpGet("{id}")]
         public async Task<ActionResult<UserViewModel>> GetUser(int id)
         {
-            var user = await _context.Users.FindAsync(id);
+            var apiSession = (ApiSession)HttpContext.Items["api_session"];
+            if (apiSession == null)
+            {
+                return Unauthorized();
+            }
+
+            var teamId = apiSession.TeamId;
+
+            var user = await _context.Users.Where(user => user.TeamId == teamId && user.Id == id).FirstOrDefaultAsync();
 
             if (user == null)
             {
@@ -143,73 +172,34 @@ namespace TableServiceApi.Controllers
 
 
             // Save the Api Session
-            CreateApiSession(user, token);
+            CreateApiSession(user);
 
             // Save changes to the database
             await _context.SaveChangesAsync();
 
+            HttpContext.Response.Cookies.Append("Authorization", "Bearer " + token, new CookieOptions { HttpOnly = true });
             return JwtUserViewModelFromUser(user, token);
         }
 
-        // PUT: api/Users/5
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        //[HttpPut("{id}")]
-        //public async Task<IActionResult> PutUser(int id, User user)
-        //{
-        //    if (id != user.Id)
-        //    {
-        //        return BadRequest();
-        //    }
+        [Authorize]
+        [HttpPut]
+        [Route("logout")]
+        public async Task<IActionResult> LogoutUser()
+        {
+            var apiSession = (ApiSession)HttpContext.Items["api_session"];
+            if (apiSession == null)
+            {
+                return Unauthorized();
+            }
 
-        //    _context.Entry(user).State = EntityState.Modified;
+            InvalidateSessions(apiSession.UserName);
+            await _context.SaveChangesAsync();
 
-        //    try
-        //    {
-        //        await _context.SaveChangesAsync();
-        //    }
-        //    catch (DbUpdateConcurrencyException)
-        //    {
-        //        if (!UserExists(id))
-        //        {
-        //            return NotFound();
-        //        }
-        //        else
-        //        {
-        //       s     throw;
-        //        }
-        //    }
+            HttpContext.Response.Cookies.Delete("Authorization", new CookieOptions { HttpOnly = true });
+            return Ok();
+        }
 
-        //    return NoContent();
-        //}
-
-        // POST: api/Users
-        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
-        //[HttpPost]
-        //public async Task<ActionResult<User>> PostUser(User user)
-        //{
-        //    _context.Users.Add(user);
-        //    await _context.SaveChangesAsync();
-
-        //    return CreatedAtAction("GetUser", new { id = user.Id }, user);
-        //}
-
-        // DELETE: api/Users/5
-        //[HttpDelete("{id}")]
-        //public async Task<IActionResult> DeleteUser(int id)
-        //{
-        //    var user = await _context.Users.FindAsync(id);
-        //    if (user == null)
-        //    {
-        //        return NotFound();
-        //    }
-
-        //    _context.Users.Remove(user);
-        //    await _context.SaveChangesAsync();
-
-        //    return NoContent();
-        //}
-
-        private static UserViewModel UserViewModelFromUser(User user)
+       private static UserViewModel UserViewModelFromUser(User user)
         {
             return new UserViewModel 
             { 
@@ -305,11 +295,10 @@ namespace TableServiceApi.Controllers
             }
         }
 
-        private void CreateApiSession(User user, string token)
+        private void CreateApiSession(User user)
         {
             ApiSession session = new ApiSession
             {
-                Token = token,
                 UserName = user.UserName,
                 TeamId = user.TeamId,
                 TeamName = user.TeamName,

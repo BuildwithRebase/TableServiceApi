@@ -16,20 +16,23 @@ namespace TableService.Core.Security
             if (user.IsSuperAdmin) 
             {
                 return new ClaimsIdentity(userIdentity, new Claim[] {
-                    new Claim("UserRole", "SuperAdmin"),
-                    new Claim("UserRole", "Admin")
+                    new Claim("team_name", user.TeamName),
+                    new Claim("user_role", "SuperAdmin"),
+                    new Claim("user_role", "Admin")
                 });
             }
             else if (user.IsAdmin)
             {
                 return new ClaimsIdentity(userIdentity, new Claim[] {
-                    new Claim("UserRole", "Admin")
+                    new Claim("team_name", user.TeamName),
+                    new Claim("user_role", "Admin")
                 });
             }
             else 
             {
                 return new ClaimsIdentity(userIdentity, new Claim[] {
-                    new Claim("UserRole", "General")
+                    new Claim("team_name", user.TeamName),
+                    new Claim("user_role", "General")
                 });
             }
         }

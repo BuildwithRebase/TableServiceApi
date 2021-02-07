@@ -12,7 +12,6 @@ namespace TableService.Core.Contexts
         public DbSet<Team> Teams { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<Table> Tables { get; set; }
-        public DbSet<TableRecord> TableRecords { get; set; }
         public DbSet<ApiSession> ApiSessions { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
@@ -26,12 +25,16 @@ namespace TableService.Core.Contexts
             Team childTeam = CreateTeam(2, 1, "Test client", false);
 
             User defaultUser = CreateUser(1, "muncey", "philip.munce@gmail.com", PasswordUtility.HashPassword("ZfmoU98M"), "Philip", "Munce", true, true, 1, "Build with rebase");
+            User michaelUser = CreateUser(3, "michael", "Ali3nS4n@gmail.com", PasswordUtility.HashPassword("HpvpBz7H"), "Michael", "Rapson", true, true, 1, "Build with rebase");
+            User bryanUser = CreateUser(4, "bryan", "bzavestoski@gmail.com", PasswordUtility.HashPassword("muYFEB2R"), "Bryan", "Zavestoski", true, true, 1, "Build with rebase");
+
+
             User generalUser = CreateUser(2, "generaluser", "philip.munce@munceyweb.com", PasswordUtility.HashPassword("password123"), "General", "User", false, false, 2, "Test client");
 
-            Table tasksTable = CreateTable(1, 1, "Build with rebase", "tasks", "Tasks", "task_name", "task_status", "assigned_to", "due_date", "comments");
+            Table tasksTable = CreateTable(1, 1, "Build with rebase", "Task", "Tasks", "TaskName,TaskStatus,AssignedTo,DueDate,Comments", "string,string,string,datetime,string");
 
             modelBuilder.Entity<Team>().HasData(defaultTeam, childTeam);
-            modelBuilder.Entity<User>().HasData(defaultUser, generalUser);
+            modelBuilder.Entity<User>().HasData(defaultUser, generalUser, michaelUser, bryanUser);
             modelBuilder.Entity<Table>().HasData(tasksTable);
         }
 
@@ -73,7 +76,7 @@ namespace TableService.Core.Contexts
             };
         }
 
-        private Table CreateTable(int id, int teamId, string teamName, string tableName, string tableLabel, string field1, string field2, string field3, string field4, string field5)
+        private Table CreateTable(int id, int teamId, string teamName, string tableName, string tableLabel, string fieldNames, string fieldTypes)
         {
             return new Table
             {
@@ -82,16 +85,8 @@ namespace TableService.Core.Contexts
                 TeamName = teamName,
                 TableName = tableName,
                 TableLabel = tableLabel,
-                Field1Name = field1,
-                Field1Type = "string",
-                Field2Name = field2,
-                Field2Type = "string",
-                Field3Name = field3,
-                Field3Type = "string",
-                Field4Name = field4,
-                Field4Type = "string",
-                Field5Name = field5,
-                Field5Type = "string",
+                FieldNames = fieldNames,
+                FieldTypes = fieldTypes,
                 CreatedAt = DateTime.Now,
                 CreatedUserName = "muncey",
                 UpdatedAt = DateTime.Now,

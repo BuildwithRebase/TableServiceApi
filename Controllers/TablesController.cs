@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TableService.Core.Contexts;
 using TableService.Core.Models;
+using TableServiceApi.ViewModels;
 
 namespace TableServiceApi.Controllers
 {
@@ -25,16 +26,41 @@ namespace TableServiceApi.Controllers
 
         // GET: api/Tables
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Table>>> GetTables()
+        public async Task<ActionResult<PagedResponseViewModel>> GetTables([FromQuery] int? page, [FromQuery] int? pageSize)
         {
-            return await _context.Tables.ToListAsync();
+            var apiSession = (ApiSession)HttpContext.Items["api_session"];
+            if (apiSession == null)
+            {
+                return Unauthorized();
+            }
+
+            var teamId = apiSession.TeamId;
+
+            int take = (pageSize == null) ? 10 : (int)pageSize;
+            int skip = (page == null) ? 0 : ((int)page - 1) * take;
+
+
+            int totalCount = await _context.Tables.Where(tbl => tbl.TeamId == teamId).CountAsync();
+            var data = await _context.Tables.Where(tbl => tbl.TeamId == teamId).Skip(skip).Take(take).ToListAsync();
+
+            var response = new PagedResponseViewModel(page ?? 1, pageSize ?? 10, totalCount, data);
+
+            return response;
         }
 
         // GET: api/Tables/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Table>> GetTable(int id)
         {
-            var table = await _context.Tables.FindAsync(id);
+            var apiSession = (ApiSession)HttpContext.Items["api_session"];
+            if (apiSession == null)
+            {
+                return Unauthorized();
+            }
+
+            var teamId = apiSession.TeamId;
+
+            var table = await _context.Tables.Where(tbl => tbl.TeamId == teamId && tbl.Id == id).FirstOrDefaultAsync();
 
             if (table == null)
             {
@@ -49,6 +75,18 @@ namespace TableServiceApi.Controllers
         [HttpPut("{id}")]
         public async Task<IActionResult> PutTable(int id, Table table)
         {
+            var apiSession = (ApiSession)HttpContext.Items["api_session"];
+            if (apiSession == null)
+            {
+                return Unauthorized();
+            }
+
+            var teamId = apiSession.TeamId;
+            if (!apiSession.UserRoles.Contains("SuperAdmin") && teamId != table.TeamId)
+            {
+                return Unauthorized();
+            }
+
             if (id != table.Id)
             {
                 return BadRequest();
@@ -80,6 +118,18 @@ namespace TableServiceApi.Controllers
         [HttpPost]
         public async Task<ActionResult<Table>> PostTable(Table table)
         {
+            var apiSession = (ApiSession)HttpContext.Items["api_session"];
+            if (apiSession == null)
+            {
+                return Unauthorized();
+            }
+
+            var teamId = apiSession.TeamId;
+            if (!apiSession.UserRoles.Contains("SuperAdmin") && teamId != table.TeamId)
+            {
+                return Unauthorized();
+            }
+
             _context.Tables.Add(table);
             await _context.SaveChangesAsync();
 
@@ -90,10 +140,23 @@ namespace TableServiceApi.Controllers
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeleteTable(int id)
         {
+            var apiSession = (ApiSession)HttpContext.Items["api_session"];
+            if (apiSession == null)
+            {
+                return Unauthorized();
+            }
+
+            var teamId = apiSession.TeamId;
+
             var table = await _context.Tables.FindAsync(id);
             if (table == null)
             {
                 return NotFound();
+            }
+
+            if (!apiSession.UserRoles.Contains("SuperAdmin") && teamId != table.TeamId)
+            {
+                return Unauthorized();
             }
 
             _context.Tables.Remove(table);
@@ -106,5 +169,6 @@ namespace TableServiceApi.Controllers
         {
             return _context.Tables.Any(e => e.Id == id);
         }
+
     }
 }

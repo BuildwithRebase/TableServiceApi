@@ -19,6 +19,9 @@ using TableService.Core.Contexts;
 using TableService.Core.Security;
 using Swashbuckle.AspNetCore.Annotations;
 using Swashbuckle.AspNetCore.Filters;
+using TableServiceApi.TableService.Core.Contexts;
+using Microsoft.Extensions.FileProviders;
+using System.IO;
 
 namespace TableServiceApi
 {
@@ -34,7 +37,7 @@ namespace TableServiceApi
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-
+            services.AddRazorPages();
             services.AddControllers();
             services.AddSwaggerGen(c =>
             {
@@ -54,12 +57,25 @@ namespace TableServiceApi
                     Type = SecuritySchemeType.ApiKey
                 });
             });
+
+            services.AddHttpContextAccessor();
             services.AddDbContext<TableServiceContext>();
+            services.AddDbContext<TeamDbContext>();
             var tokenKey = Configuration.GetValue<string>("TokenKey");
             var key = Encoding.ASCII.GetBytes(tokenKey);
             
             services.AddAuthentication("Basic")
                 .AddScheme<BearerAuthenticationOptions, BearerAuthenticationHandler>("Basic", null);
+
+            services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(
+                    builder =>
+                    {
+                        builder.WithOrigins("*").AllowAnyHeader();
+                    });
+            });
+
 
         }
 
@@ -81,14 +97,20 @@ namespace TableServiceApi
             app.UseHttpsRedirection();
 
             app.UseRouting();
+            app.UseCors();
+
+            app.UseDefaultFiles();
+            app.UseStaticFiles();
 
             app.UseAuthentication();
             app.UseAuthorization();
 
             app.UseEndpoints(endpoints =>
             {
+                endpoints.MapRazorPages();
                 endpoints.MapControllers();
             });
+
         }
     }
 }
