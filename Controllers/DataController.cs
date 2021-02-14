@@ -105,7 +105,7 @@ namespace TableServiceApi.Controllers
                 .Select(record => TableUtility.MapTableRecordToObject(tableName, record, objectType, fields));
 
             int totalCount = _teamDbContext.TableRecords.Count();
-            var response = new PagedResponseViewModel(page ?? 1, pageSize ?? 10, totalCount, data.ToList());
+            var response = new PagedResponseViewModel(page ?? 1, pageSize ?? 10, totalCount, data.ToList(), fields);
 
             return Ok(JsonConvert.SerializeObject(response, Formatting.Indented));
         }

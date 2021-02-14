@@ -20,17 +20,40 @@
 var TableServiceApiClient = function () {
 
     this.baseUrl = (window.location.href.indexOf('localhost') > -1) ? 'https://localhost:5001/api' : 'https://appcore.buildwithrebase.online/api';
+    this.token = null;
+    this.raiseEvent = true;
+    this.lastStatus = 0;
+    this.lastError = '';
+
+    this.isAuthenticated = function () {
+        return (this.token != null);
+    }
+
+    this.invalidToken = function () {
+        this.token = null;
+    }
+
+    this.setRaiseEvent = function (raiseEvent) {
+        this.raiseEvent = raiseEvent;
+    }
 
     this.apiHandleResult = function apiHandleResult(fn, result) {
+        var detail = {
+            fn: fn,
+            result: result
+        }
+
+        if (fn === 'authenticateUser') {
+            this.token = result.token;
+        } else if (fn === 'logout') {
+            this.invalidToken();
+        }
+
         var event = new CustomEvent("ts_result", {
-            detail: {
-                fn: fn,
-                result: result
-            },
+            detail: detail,
             bubbles: true,
             cancelable: true
         });
-
         document.body.dispatchEvent(event);
     }
 
@@ -60,12 +83,40 @@ var TableServiceApiClient = function () {
     }
 
     this.internalFetch = function internalFetch(fn, url, requestOptions) {
-        fetch(this.baseUrl + url, requestOptions)
-            .then(response => response.json())
-            .then(result => this.apiHandleResult(fn, result))
-            .catch(error => this.apiHandleError(fn, error));
 
-        return 1;
+        if (this.token) {
+            requestOptions.headers = new Headers({
+                'Authorization': 'Bearer ' + this.token,
+                'Content-Type': 'application/json'
+            });
+        } else if (window.localStorage.getItem('user') != null) {
+            var user = JSON.parse(window.localStorage.getItem('user'));
+            this.token = user.token;
+            requestOptions.headers = new Headers({
+                'Authorization': 'Bearer ' + this.token,
+                'Content-Type': 'application/json'
+            });
+        }
+
+
+
+        if (this.raiseEvent) {
+            fetch(this.baseUrl + url, requestOptions)
+                .then(response => response.json())
+                .then(result => this.apiHandleResult(fn, result))
+                .catch(error => this.apiHandleError(fn, error));
+
+            return 1;
+        } else {
+            return fetch(this.baseUrl + url, requestOptions)
+                .then(response => {
+                    this.lastStatus = response.status;
+                    if (response.status > 400) {
+                        return response.text();
+                    }
+                    return response.json()
+                });
+        }
     }
 
     this.ping = function ping() {
@@ -432,11 +483,11 @@ var TsUsers = function (tsClient) {
         return this.tsClient.internalFetch(arguments.callee.name, url, requestOptions);
     }
 
-    this.authenticateUser = function authenticateUser(userName, userPassword) {
+    this.authenticateUser = function authenticateUser(email, userPassword) {
         var myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
 
-        var raw = JSON.stringify({ "userName": userName, "userPassword": userPassword });
+        var raw = JSON.stringify({ "email": email, "userPassword": userPassword });
 
         var requestOptions = {
             method: 'POST',
@@ -445,7 +496,7 @@ var TsUsers = function (tsClient) {
             redirect: 'follow'
         };
 
-        var url = '/Users/authenticateUser' + id;
+        var url = '/Users/authenticateUser';
         return this.tsClient.internalFetch(arguments.callee.name, url, requestOptions);
     }
 
@@ -481,7 +532,7 @@ var TsUsers = function (tsClient) {
     }
 }
 
-// for testing only
-document.addEventListener('ts_result', ($ev) => console.log($ev.detail));
 var ts = new TableServiceApiClient();
+document.body.dispatchEvent(new Event('ts_loaded'));
+
 

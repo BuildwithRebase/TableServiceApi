@@ -16,5 +16,6 @@ namespace TableServiceApi.ViewModels
         public string TeamName { get; set; }
         public string UserRoles { get; set; }
         public string Token { get; set; }
+        public List<TeamTable> Tables { get; set; }
     }
 }
