@@ -177,8 +177,15 @@ namespace TableServiceApi.Controllers
             // Save changes to the database
             await _context.SaveChangesAsync();
 
+            // Get the tables that belong to this team
+            var tables = _context.Tables
+                .Where(tbl => tbl.TeamId == user.TeamId)
+                .Select(tbl => new TeamTable { Id = tbl.Id, TableName = tbl.TableName, TableLabel = tbl.TableLabel });
+
             HttpContext.Response.Cookies.Append("Authorization", "Bearer " + token, new CookieOptions { HttpOnly = true });
-            return JwtUserViewModelFromUser(user, token);
+            HttpContext.Response.Headers.Append("Token", token);
+
+            return JwtUserViewModelFromUser(user, tables.ToList(), token);
         }
 
         [Authorize]
@@ -196,7 +203,7 @@ namespace TableServiceApi.Controllers
             await _context.SaveChangesAsync();
 
             HttpContext.Response.Cookies.Delete("Authorization", new CookieOptions { HttpOnly = true });
-            return Ok();
+            return Ok(new LogoutResponseViewModel());
         }
 
        private static UserViewModel UserViewModelFromUser(User user)
@@ -213,7 +220,7 @@ namespace TableServiceApi.Controllers
             };
         }
 
-        private static JwtUserViewModel JwtUserViewModelFromUser(User user, string token)
+        private static JwtUserViewModel JwtUserViewModelFromUser(User user, List<TeamTable> tables, string token)
         {
             return new JwtUserViewModel
             {
@@ -225,7 +232,8 @@ namespace TableServiceApi.Controllers
                 UserName = user.UserName,
                 TeamName = user.TeamName,
                 UserRoles = FormatUserRoles(user),
-                Token = token
+                Token = token,
+                Tables = tables
             };
         }
 

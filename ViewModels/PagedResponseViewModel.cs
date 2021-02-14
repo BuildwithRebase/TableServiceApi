@@ -1,5 +1,6 @@
 ﻿using System;
-using System.Collections;
+using System.Collections.Generic;
+using TableService.Core.Utility;
 
 namespace TableServiceApi.ViewModels
 {
@@ -12,9 +13,10 @@ namespace TableServiceApi.ViewModels
         public int recordStart { get; set; }
         public int recordEnd { get; set; }
         public object data { get; set; }
+        public List<FieldDefinition> fields { get; set; }
 
 
-        public PagedResponseViewModel(int page, int pageSize, int totalCount, object data)
+        public PagedResponseViewModel(int page, int pageSize, int totalCount, object data, List<FieldDefinition> fields = null)
         {
             this.page = page;
             this.pageSize = pageSize;
@@ -26,6 +28,9 @@ namespace TableServiceApi.ViewModels
             
             this.totalCount = totalCount;
             this.data = data;
+
+            this.fields = fields ?? new List<FieldDefinition>();
+            
         }
     }
 }
