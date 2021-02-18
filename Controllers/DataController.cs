@@ -104,7 +104,7 @@ namespace TableServiceApi.Controllers
                 .Skip(skip).Take(take)
                 .Select(record => TableUtility.MapTableRecordToObject(tableName, record, objectType, fields));
 
-            int totalCount = _teamDbContext.TableRecords.Count();
+            int totalCount = _teamDbContext.TableRecords.Where(tbl => tbl.TableName.ToLower() == tableName.ToLower()).Count();
             var response = new PagedResponseViewModel(page ?? 1, pageSize ?? 10, totalCount, data.ToList(), fields);
 
             return Ok(JsonConvert.SerializeObject(response, Formatting.Indented));
@@ -161,7 +161,7 @@ namespace TableServiceApi.Controllers
             _teamDbContext.Add(tableRecord);
             await _teamDbContext.SaveChangesAsync();
 
-            return Ok();
+            return Ok(new MessageViewModel("Revoked"));
         }
 
         // PUT: api/Data/Task/5
@@ -209,7 +209,7 @@ namespace TableServiceApi.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok(new MessageViewModel("Revoked"));
         }
 
 
@@ -235,7 +235,7 @@ namespace TableServiceApi.Controllers
             _teamDbContext.TableRecords.Remove(tableRecord);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok(new MessageViewModel("Revoked"));
         }
 
         private Table GetTableByName(string teamName, string tableName)

@@ -3,49 +3,40 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - WebApplication1</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" />
+    <title>Build with rebase</title>
+    <link href=~/lib/buildwithrebase/css/chunk-022e3d0e.1a7d3fd4.css rel=prefetch>
+    <link href=~/lib/buildwithrebase/css/chunk-14df1ae2.f79a0f25.css rel=prefetch>
+    <link href=~/lib/buildwithrebase/css/chunk-1ae979db.f8d1079c.css rel=prefetch>
+    <link href=~/lib/buildwithrebase/css/chunk-2bd7279a.f8e904f2.css rel=prefetch>
+    <link href=~/lib/buildwithrebase/css/chunk-4001cf5b.33d58d2f.css rel=prefetch>
+    <link href=~/lib/buildwithrebase/css/chunk-611fcd75.4fc238ec.css rel=prefetch>
+    <link href=~/lib/buildwithrebase/css/chunk-a5e51858.0fb32725.css rel=prefetch>
+    <link href=~/lib/buildwithrebase/css/chunk-c5076518.de32a339.css rel=prefetch>
+    <link href=~/lib/buildwithrebase/css/chunk-f9832fc0.e5bf7f87.css rel=prefetch>
+    <link href=~/lib/buildwithrebase/js/chunk-022e3d0e.9ed2fdb9.js rel=prefetch>
+    <link href=~/lib/buildwithrebase/js/chunk-14df1ae2.d3ddd60b.js rel=prefetch>
+    <link href=~/lib/buildwithrebase/js/chunk-1ae979db.d3526f55.js rel=prefetch>
+    <link href=~/lib/buildwithrebase/js/chunk-2bd7279a.602bce4a.js rel=prefetch>
+    <link href=~/lib/buildwithrebase/js/chunk-2d0af4ea.4d26d388.js rel=prefetch>
+    <link href=~/lib/buildwithrebase/js/chunk-2d0cbcc6.e55f6db4.js rel=prefetch>
+    <link href=~/lib/buildwithrebase/js/chunk-2d0da915.be287310.js rel=prefetch>
+    <link href=~/lib/buildwithrebase/js/chunk-34b087e9.1fe7e126.js rel=prefetch>
+    <link href=~/lib/buildwithrebase/js/chunk-4001cf5b.75894f8e.js rel=prefetch>
+    <link href=~/lib/buildwithrebase/js/chunk-611fcd75.fdda856f.js rel=prefetch>
+    <link href=~/lib/buildwithrebase/js/chunk-a5e51858.d6d2d20a.js rel=prefetch>
+    <link href=~/lib/buildwithrebase/js/chunk-c5076518.39197950.js rel=prefetch>
+    <link href=~/lib/buildwithrebase/js/chunk-f9832fc0.8ebf01ea.js rel=prefetch>
+    <link href=~/lib/buildwithrebase/css/app.e3fb1cfb.css rel=preload as= style>
+    <link href=~/lib/buildwithrebase/js/app.0bed146b.js rel=preload as=script>
+    <link href=~/lib/buildwithrebase/js/chunk-vendors.1c0d0a26.js rel=preload as=script>
+    <link href=~/lib/buildwithrebase/css/app.e3fb1cfb.css rel=stylesheet>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container">
-                <a class="navbar-brand" asp-area="" asp-page="/Index">WebApplication1</a>
-                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-page="/Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
+    <noscript><strong>We're sorry but vue-cli doesn't work properly without JavaScript enabled. Please enable it to continue.</strong></noscript><div id=app></div>
+    <script src=~/lib/buildwithrebase/js/chunk-vendors.1c0d0a26.js></script>
+    <script src=~/lib/buildwithrebase/js/app.0bed146b.js></script>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2021 - WebApplication1 - <a asp-area="" asp-page="/Privacy">Privacy</a>
-        </div>
-    </footer>
+    @RenderBody()
 
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    <script src="~/js/tableservice-api.js" asp-append-version="true"></script>
-
-    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

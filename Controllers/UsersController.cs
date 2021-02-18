@@ -53,7 +53,7 @@ namespace TableServiceApi.Controllers
                 .Select(u => new UserViewModel { Email = u.Email, Id = u.Id, FirstName = u.FirstName, LastName = u.LastName, TeamId = u.TeamId, UserName = u.UserName, TeamName = u.TeamName })
                 .ToListAsync();
 
-            var response = new PagedResponseViewModel(page ?? 1, pageSize ?? 10, totalCount, data);
+            var response = new PagedResponseViewModel(page ?? 1, pageSize ?? 10, totalCount, data, DynamicClassUtility.GetFieldDefinitions(typeof(User)));
 
             return response;
         }

@@ -13,6 +13,8 @@ namespace TableService.Core.Contexts
         public DbSet<User> Users { get; set; }
         public DbSet<Table> Tables { get; set; }
         public DbSet<ApiSession> ApiSessions { get; set; }
+//        public DbSet<Plan> Plans { get; set; }
+//        public DbSet<Sale> Sales { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
@@ -36,6 +38,16 @@ namespace TableService.Core.Contexts
             modelBuilder.Entity<Team>().HasData(defaultTeam, childTeam);
             modelBuilder.Entity<User>().HasData(defaultUser, generalUser, michaelUser, bryanUser);
             modelBuilder.Entity<Table>().HasData(tasksTable);
+
+  /*          modelBuilder.Entity<Plan>().HasData(
+                CreatePlan(1, 1, "Build with rebase", 1, "Free", "-", "100", "0", "0"),
+                CreatePlan(2, 1, "Build with rebase", 2, "Premium", "Monthly", "1000", "10", "100")
+            );
+
+            modelBuilder.Entity<Sale>().HasData(
+                CreateSale(1, 1, "Build with rebase", "John smith", 1, "100", "10 May 2020", "Premium"),
+                CreateSale(2, 1, "Build with rebase", "John smith", 1, "100", "10 May 2020", "Premium"),
+                CreateSale(3, 1, "Build with rebase", "John smith", 1, "100", "10 May 2020", "Premium"));*/
         }
 
         private Team CreateTeam(int id, int? parentTeamId, string teamName, bool isAdmin)
@@ -87,6 +99,45 @@ namespace TableService.Core.Contexts
                 TableLabel = tableLabel,
                 FieldNames = fieldNames,
                 FieldTypes = fieldTypes,
+                CreatedAt = DateTime.Now,
+                CreatedUserName = "muncey",
+                UpdatedAt = DateTime.Now,
+                UpdatedUserName = "muncey"
+            };
+        }
+
+        private Plan CreatePlan(int id, int teamId, string teamName, int displayOrder, string planName, string billingFrequency, string userCount, string monthlyCost, string annualCost)
+        {
+            return new Plan
+            {
+                Id = id,
+                TeamId = teamId,
+                TeamName = teamName,
+                DisplayOrder = displayOrder,
+                PlanName = planName,
+                BillingFrequency = billingFrequency,
+                UserCount = userCount,
+                MonthlyCost = monthlyCost,
+                AnnualCost = annualCost,
+                CreatedAt = DateTime.Now,
+                CreatedUserName = "muncey",
+                UpdatedAt = DateTime.Now,
+                UpdatedUserName = "muncey"
+            };
+        }
+
+        private Sale CreateSale(int id, int teamId, string teamName, string customerName, int planId, string saleAmount, string saleDate, string planName)
+        {
+            return new Sale
+            {
+                Id = id,
+                TeamId = teamId,
+                TeamName = teamName,
+                CustomerName = customerName,
+                PlanId = planId,
+                SaleAmount = saleAmount,
+                SaleDate = saleDate,
+                PlanName = planName,
                 CreatedAt = DateTime.Now,
                 CreatedUserName = "muncey",
                 UpdatedAt = DateTime.Now,

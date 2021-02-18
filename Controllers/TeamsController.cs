@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TableService.Core.Contexts;
 using TableService.Core.Models;
+using TableService.Core.Utility;
 using TableServiceApi.Filters;
 using TableServiceApi.ViewModels;
 
@@ -49,7 +50,7 @@ namespace TableServiceApi.Controllers
             int totalCount = await _context.Teams.CountAsync();
             var data = await _context.Teams.Skip(skip).Take(take).ToListAsync();
 
-            var response = new PagedResponseViewModel(page ?? 1, pageSize ?? 10, totalCount, data);
+            var response = new PagedResponseViewModel(page ?? 1, pageSize ?? 10, totalCount, data, DynamicClassUtility.GetFieldDefinitions(typeof(Team)));
 
             return response;
         }
@@ -116,7 +117,7 @@ namespace TableServiceApi.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok(new MessageViewModel("Revoked"));
         }
 
         // POST: api/Teams
@@ -163,7 +164,7 @@ namespace TableServiceApi.Controllers
             _context.Teams.Remove(team);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok(new MessageViewModel("Revoked"));
         }
 
         private bool TeamExists(int id)
