@@ -14,6 +14,7 @@ namespace TableService.Core.Models
         public string TeamName { get; set; }
         public string ContactUserName { get; set; }
         public string ContactEmail { get; set; }
+        public string BillFlowSecret { get; set; }
         public bool IsAdmin { get; set; }
         public string TablePrefix { get; set; }
         public string CreatedUserName { get; set; }

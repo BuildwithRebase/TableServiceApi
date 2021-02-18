@@ -72,7 +72,7 @@ namespace TableServiceApi
                 options.AddDefaultPolicy(
                     builder =>
                     {
-                        builder.WithOrigins("*").AllowAnyHeader().AllowAnyMethod();
+                        builder.WithOrigins("*").AllowAnyHeader().AllowAnyMethod().AllowAnyOrigin();
                     });
             });
 

@@ -129,11 +129,61 @@ var TableServiceApiClient = function () {
     }
 
     // assign routes
+    this.accounts = new Accounts(this);
     this.sessions = new ApiSession(this);
     this.dataItems = new TsData(this);
     this.tables = new TsTables(this);
     this.teams = new TsTeams(this);
     this.users = new TsUsers(this);
+}
+
+var Accounts = function (tsClient) {
+        this.tsClient = tsClient;
+
+    this.getAccount = function getAccount() {
+        var myHeaders = new Headers();
+        myHeaders.append("Authorization", "true");
+
+        var requestOptions = {
+            method: 'GET',
+            headers: myHeaders,
+            redirect: 'follow'
+        };
+
+        var url = '/Account';
+        return this.tsClient.internalFetch(arguments.callee.name, url, requestOptions);
+    }
+
+    this.updateBillFlowSecret = function updateBillFlowSecret(billFlowSecret) {
+        var myHeaders = new Headers();
+        myHeaders.append("Authorization", "true");
+
+        var raw = { billFlowSecret: billFlowSecret }
+
+        var requestOptions = {
+            method: 'POST',
+            headers: myHeaders,
+            redirect: 'follow',
+            body: JSON.stringify(raw)
+        };
+
+        var url = '/Account/updateBillFlowSecret';
+        return this.tsClient.internalFetch(arguments.callee.name, url, requestOptions);
+    }
+
+    this.getHMAC = function getAccount() {
+        var myHeaders = new Headers();
+        myHeaders.append("Authorization", "true");
+
+        var requestOptions = {
+            method: 'GET',
+            headers: myHeaders,
+            redirect: 'follow'
+        };
+
+        var url = '/Account/getBillFlowHMAC';
+        return this.tsClient.internalFetch(arguments.callee.name, url, requestOptions);
+    }
 }
 
 /**
@@ -265,7 +315,7 @@ var TsData = function (tsClient) {
         return this.tsClient.internalFetch(arguments.callee.name, url, requestOptions);
     }
 
-    this.addTableDataItem = function addTableDataItem(tableName) {
+    this.addTableDataItem = function addTableDataItem(tableName, dataItem) {
         var myHeaders = new Headers();
         myHeaders.append("Content-Type", "application/json");
         myHeaders.append("Authorization", "true");

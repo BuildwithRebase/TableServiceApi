@@ -55,6 +55,36 @@ namespace TableService.Core.Utility
             return tb.CreateType();
         }
 
+        public static List<FieldDefinition> GetFieldDefinitions(Type type)
+        {
+            var result = new List<FieldDefinition>();
+            var properties = type.GetProperties();
+            foreach (var property in properties)
+            {
+                var fieldDefinition = new FieldDefinition();
+
+                fieldDefinition.FieldName = property.Name;
+                if (property.PropertyType == typeof(string))
+                {
+                    fieldDefinition.FieldType = "string";
+                }
+                else if (property.PropertyType == typeof(DateTime))
+                {
+                    fieldDefinition.FieldType = "datetime";
+                }
+                else if (property.PropertyType == typeof(int))
+                {
+                    fieldDefinition.FieldType = "number";
+                } else
+                {
+                    fieldDefinition.FieldType = "string";
+                }
+
+                result.Add(fieldDefinition);
+            }
+            return result;
+        }
+
         public static FieldInfo GetFieldInfo(Type type, string fieldName)
         {
             return type.GetField(fieldName);

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TableService.Core.Contexts;
 using TableService.Core.Models;
+using TableService.Core.Utility;
 using TableServiceApi.ViewModels;
 
 namespace TableServiceApi.Controllers
@@ -43,7 +44,7 @@ namespace TableServiceApi.Controllers
             int totalCount = await _context.Tables.Where(tbl => tbl.TeamId == teamId).CountAsync();
             var data = await _context.Tables.Where(tbl => tbl.TeamId == teamId).Skip(skip).Take(take).ToListAsync();
 
-            var response = new PagedResponseViewModel(page ?? 1, pageSize ?? 10, totalCount, data);
+            var response = new PagedResponseViewModel(page ?? 1, pageSize ?? 10, totalCount, data, DynamicClassUtility.GetFieldDefinitions(typeof(Table)));
 
             return response;
         }
@@ -110,7 +111,7 @@ namespace TableServiceApi.Controllers
                 }
             }
 
-            return NoContent();
+            return Ok(new MessageViewModel("Revoked"));
         }
 
         // POST: api/Tables
@@ -162,7 +163,7 @@ namespace TableServiceApi.Controllers
             _context.Tables.Remove(table);
             await _context.SaveChangesAsync();
 
-            return NoContent();
+            return Ok(new MessageViewModel("Revoked"));
         }
 
         private bool TableExists(int id)
