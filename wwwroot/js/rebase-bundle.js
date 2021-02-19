@@ -34,7 +34,7 @@ var RebaseComponent = /** @class */ (function () {
         if (Object.keys(this.rebaseTemplates).length == 0) {
             this.loadTemplates();
         }
-        if (this.isLoggedOn() && !(window.location.pathname === '/login')) {
+        if (this.isLoggedOn() && !(window.location.pathname === '/login') && !(window.location.pathname === '/invoices')) {
             // window.billflowSettings 
             if (window['billflowSettings'] && window.localStorage.getItem('rebaseEmail')) {
                 window['billflowSettings']['email'] = window.localStorage.getItem('rebaseEmail');
@@ -48,8 +48,15 @@ var RebaseComponent = /** @class */ (function () {
                     _this[$(el).data('rebaseAction')](self);
                 });
             });
-        }
-        else {
+        } else if (window.location.pathname === '/invoices') {
+            // going to load something here
+            window.ts.raiseEvent = false;
+            window.ts.token = this.token;
+            window.ts.accounts.getHMAC()
+                .then(function (hmac) {
+                    window.billflowSettings['hash'] = hmac.message;
+                });
+        } else {
             this.loadLogin();
         }
     };
