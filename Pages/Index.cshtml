@@ -3,3 +3,27 @@
 @{
     ViewData["Title"] = "Home page";
 }
+<main class="container">
+    <div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+        <h1 class="display-4">Content</h1>
+        <p class="lead">Access content according to your plan level</p>
+    </div>
+
+    <div class="container rebase-control-wrapper ">
+        <div class="row row-cols-2 text-center rebase-control rebase-control-table">
+            <div data-rebase-item="product.default.view-list" class="col">
+                <div class="card mb-4 shadow-sm">
+                    <div class="card-header">
+                        <h4 class="my-0 fw-normal">{{ProductName}}</h4>
+                    </div>
+                    <div class="card-body">
+                        <p>{{ProductDescription}}</p>
+                        <button type="button" class="w-100 btn btn-lg btn-outline-primary">
+                            {{ProductLevel}}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>

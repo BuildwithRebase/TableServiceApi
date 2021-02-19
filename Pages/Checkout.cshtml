@@ -1,0 +1,18 @@
+﻿@page
+@model TableServiceApi.Pages.CheckoutModel
+@{
+}
+<main class="container">
+    <div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+        <h1 class="display-4">Checkout</h1>
+    </div>
+
+    <div id="billflow-embed"></div>
+</main>
+
+<script>
+    window.billflowSettings = {
+        "billing_page_id": "TM6yxgfhZc1Xcf0ulAjS"
+    };
+    (function () { var s = document.createElement('script'); s.src = 'https://js.billflow.io/billflow-embed.js'; s.async = true; s.type = 'text/javascript'; var x = document.getElementsByTagName('script')[0]; x.parentNode.insertBefore(s, x); })();
+</script>

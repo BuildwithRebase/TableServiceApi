@@ -83,28 +83,29 @@ namespace TableServiceApi.Controllers
             var billFlowSecret = _context.Teams.Where(team => team.Id == apiSession.TeamId).Select(team => team.BillFlowSecret).FirstOrDefault();
             var email = _context.Users.Where(user => user.UserName == apiSession.UserName).Select(user => user.Email).FirstOrDefault();
 
-            var hash = GetHash(email, billFlowSecret);
+            var hash = CreateHMAC(email, billFlowSecret);
 
             return Ok(new MessageViewModel(hash));
         }
 
-        public static String GetHash(String text, String key)
+        private string CreateHMAC(string message, string secret)
         {
-            // change according to your needs, an UTF8Encoding
-            // could be more suitable in certain situations
-            ASCIIEncoding encoding = new ASCIIEncoding();
+            secret = secret ?? "";
+            var encoding = new System.Text.ASCIIEncoding();
+            byte[] keyByte = encoding.GetBytes(secret);
+            byte[] messageBytes = encoding.GetBytes(message);
+            using (var hmacsha256 = new HMACSHA256(keyByte))
+            {
+                byte[] hashmessage = hmacsha256.ComputeHash(messageBytes);
 
-            Byte[] textBytes = encoding.GetBytes(text);
-            Byte[] keyBytes = encoding.GetBytes(key);
-
-            Byte[] hashBytes;
-
-            using (HMACSHA256 hash = new HMACSHA256(keyBytes))
-                hashBytes = hash.ComputeHash(textBytes);
-
-            return BitConverter.ToString(hashBytes).Replace("-", "").ToLower();
+                var sb = new System.Text.StringBuilder();
+                for (var i = 0; i <= hashmessage.Length - 1; i++)
+                {
+                    sb.Append(hashmessage[i].ToString("X2"));
+                }
+                return sb.ToString();
+            }
         }
-
-
     }
 }
+

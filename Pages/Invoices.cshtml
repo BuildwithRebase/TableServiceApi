@@ -1,0 +1,21 @@
+﻿@page
+@model TableServiceApi.Pages.InvoicesModel
+@{
+}
+<main class="container">
+    <div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+        <h1 class="display-4">Invoices</h1>
+    </div>
+
+    <div id="billflow-embed"></div>
+
+</main>
+<div id="billflow-embed"></div>
+<script>
+    window.billflowSettings = {
+        "billing_page_id": "quZW766lr60GvfuRi1Q8",
+        "email": "philip.munce@gmail.com",
+        "hash": "7F8E219A17CB2979C6FB1787911E8CE89FB8765F7479846534D588BD536F4E09"
+    };
+    (function () { var s = document.createElement('script'); s.src = 'https://js.billflow.io/billflow-embed.js'; s.async = true; s.type = 'text/javascript'; var x = document.getElementsByTagName('script')[0]; x.parentNode.insertBefore(s, x); })();
+</script>

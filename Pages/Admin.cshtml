@@ -1,0 +1,95 @@
+﻿@page
+@model TableServiceApi.Pages.AdminModel
+@{
+}
+<main class="container">
+    <div class="pricing-header px-3 py-3 pt-md-5 pb-md-4 mx-auto text-center">
+        <h1 class="display-4">Products</h1>
+        <p class="lead">Quickly setup products to sell to your customers.</p>
+    </div>
+
+    <div class="row">
+        <div class="rebase-control-wrapper">
+            <table class="table rebase-control rebase-control-table">
+                <thead>
+                    <tr>
+                        <th>Action</th>
+                        <th>#</th>
+                        <th>Product name</td>
+                        <th>Product description</th>
+                        <th>Product level</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr data-rebase-item="product.default.view-list">
+                        <td>
+                            <button class="btn btn-outline-secondary btn-sm rebase-button" type="button" data-id="{{Id}}" data-index="{{@@index}}" data-bs-toggle="modal" data-bs-target="#exampleModal">+</button>
+                            <button class="btn btn-outline-secondary btn-sm rebase-button" type="button" data-id="{{Id}}" data-index="{{@@index}}" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">-</button>
+                        </td>
+                        <td>{{Id}}</td>
+                        <td>{{ProductName}}</td>
+                        <td>{{ProductDescription}}</td>
+                        <td>{{ProductLevel}}</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <button class="btn btn-outline-secondary btn-sm" data-rebase-action="createData" data-bs-toggle="modal" data-bs-target="#exampleModal">Add product</button>
+    </div>
+    <div class="rebase-control-wrapper">
+        <!-- Modal -->
+        <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="exampleModalLabel">Add/Edit Product</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body rebase-control rebase-control-form">
+                        <form data-rebase-item="product.default.view-single">
+                            <div class="form-group">
+                                <label for="id">Product Id</label>
+                                <input type="text" class="form-control rebase-control" id="id" value="{{Id}}" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="ProductName">Product Name</label>
+                                <input type="text" class="form-control rebase-control" id="ProductName" value="{{ProductName}}">
+                            </div>
+                            <div class="form-group">
+                                <label for="ProductDescription">Product Description</label>
+                                <input type="text" class="form-control rebase-control" id="ProductDescription" value="{{ProductDescription}}">
+                            </div>
+                            <div class="form-group">
+                                <label for="ProductLevel">Product Level</label>
+                                <input type="text" class="form-control rebase-control" id="ProductLevel" value="{{ProductLevel}}">
+                            </div>
+                        </form>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" data-rebase-action="saveData">Save changes</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="rebase-control-wrapper">
+        <div class="modal fade" id="confirmDeleteModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Confirm Delete</h5>
+                        <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p>Please confirm deletion of this record.</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-primary" data-rebase-action="deleteData">Delete Record</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
