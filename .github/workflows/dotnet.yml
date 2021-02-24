@@ -40,7 +40,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@master
         with:
-          name: Dist Folder
+          name: Zip Package
           path: ./.deploy/TableServiceApi-package.zip
 
       - name: Deploy to AWS Beanstalk
