@@ -24,4 +24,17 @@ jobs:
     - name: Test
       run: dotnet test --no-build --verbosity normal
     - name: Publish
-      run: dotnet publish -o ./deploy/TableServiceApi
+      run: dotnet publish -o ./.deploy/TableServiceApi -r linux-x64
+    - name: Build Deployment Package
+      run: zip -r ./.deploy/TableServiceApi-package.zip ./.deploy/TableServiceApi
+    - name: Deploy to AWS Beanstalk
+      uses: einaregilsson/beanstalk-deploy@v10
+      with:
+        aws_access_key: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws_secret_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        region: ${{ secrets.AWS_REGION }}
+        application_name: BuildWithRebaseCore
+        environment_name: Buildwithrebasecore-env
+        version_label: "build-with-rebase-core-${{ steps.format-time.outputs.replaced }}"
+        deployment_package: ./.deploy/TableServiceApi-package.zip
+
