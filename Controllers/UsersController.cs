@@ -182,7 +182,7 @@ namespace TableServiceApi.Controllers
                 .Where(tbl => tbl.TeamId == user.TeamId)
                 .Select(tbl => new TeamTable { Id = tbl.Id, TableName = tbl.TableName, TableLabel = tbl.TableLabel });
 
-            HttpContext.Response.Cookies.Append("Authorization", "Bearer " + token, new CookieOptions { HttpOnly = true });
+            HttpContext.Response.Cookies.Append("Authorization", "Bearer " + token, new CookieOptions { HttpOnly = true, SameSite = SameSiteMode.Lax });
             HttpContext.Response.Headers.Append("Token", token);
 
             return JwtUserViewModelFromUser(user, tables.ToList(), token);
