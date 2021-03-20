@@ -6,13 +6,14 @@ using TableService.Core.Types;
 
 namespace TableServiceApi.ViewModels
 {
-    public class TeamTable
+    public record UpdateTableRequestViewModel
     {
-        public string TableName { get; set; }
-        public string TableLabel { get; set; }
         public int Id { get; set; }
+        public int TeamId { get; set; }
         public string FieldNames { get; set; }
         public string FieldTypes { get; set; }
-        public TableStateType TableState { get; set;  }
+        public TableStateType? TableState { get; set; }
+        public TablePrivacyModelType? TablePrivacyModel { get; set; }
+        public TableViewModeType? TableViewMode { get; set; }
     }
 }

@@ -13,6 +13,7 @@ using TableService.Core.Security;
 using TableServiceApi.Filters;
 using Microsoft.AspNetCore.Authorization;
 using System.Text;
+using TableService.Core.Types;
 
 namespace TableServiceApi.Controllers
 {
@@ -180,12 +181,32 @@ namespace TableServiceApi.Controllers
             // Get the tables that belong to this team
             var tables = _context.Tables
                 .Where(tbl => tbl.TeamId == user.TeamId)
-                .Select(tbl => new TeamTable { Id = tbl.Id, TableName = tbl.TableName, TableLabel = tbl.TableLabel });
+                .Select(tbl => new TeamTable { Id = tbl.Id, TableName = tbl.TableName, TableLabel = tbl.TableLabel, FieldNames = tbl.FieldNames, FieldTypes = tbl.FieldTypes, TableState = tbl.TableState });
 
             HttpContext.Response.Cookies.Append("Authorization", "Bearer " + token, new CookieOptions { HttpOnly = true, SameSite = SameSiteMode.Lax });
             HttpContext.Response.Headers.Append("Token", token);
 
             return JwtUserViewModelFromUser(user, tables.ToList(), token);
+        }
+
+        [Authorize]
+        [HttpGet]
+        [Route("teamTables")]
+        public ActionResult<List<TeamTable>> GetUserTeamTables()
+        {
+            var apiSession = (ApiSession)HttpContext.Items["api_session"];
+            if (apiSession == null)
+            {
+                return Unauthorized();
+            }
+
+            var teamId = apiSession.TeamId;
+            // Get the tables that belong to this team
+            var tables = _context.Tables
+                .Where(tbl => tbl.TeamId == teamId && tbl.TableState != TableStateType.TableDeleted)
+                .Select(tbl => new TeamTable { Id = tbl.Id, TableName = tbl.TableName, TableLabel = tbl.TableLabel, FieldNames = tbl.FieldNames, FieldTypes = tbl.FieldTypes, TableState = tbl.TableState } );
+
+            return Ok(tables);
         }
 
         [Authorize]
