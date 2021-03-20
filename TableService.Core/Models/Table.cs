@@ -1,6 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
+using TableService.Core.Types;
 
 namespace TableService.Core.Models
 {
@@ -10,10 +9,12 @@ namespace TableService.Core.Models
         public int TeamId { get; set; }
         public string TeamName { get; set; }
         public string TableName { get; set; }
-        public int RowCount { get; set; }
         public string TableLabel { get; set; }
         public string FieldNames { get; set; }
         public string FieldTypes { get; set; }
+        public TableStateType TableState { get; set; }
+        public TablePrivacyModelType TablePrivacyModel { get; set; }
+        public TableViewModeType TableViewMode { get; set; }
         public string CreatedUserName { get; set; }
         public string UpdatedUserName { get; set; }
         public DateTime CreatedAt { get; set; }

@@ -1,15 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Threading.Tasks;
 using TableService.Core.Contexts;
 using TableService.Core.Models;
 using TableService.Core.Utility;
+using TableService.Core.Types;
 using TableServiceApi.ViewModels;
+using System;
 
 namespace TableServiceApi.Controllers
 {
@@ -74,7 +74,7 @@ namespace TableServiceApi.Controllers
         // PUT: api/Tables/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
-        public async Task<IActionResult> PutTable(int id, Table table)
+        public async Task<IActionResult> PutTable(int id, UpdateTableRequestViewModel table)
         {
             var apiSession = (ApiSession)HttpContext.Items["api_session"];
             if (apiSession == null)
@@ -93,7 +93,38 @@ namespace TableServiceApi.Controllers
                 return BadRequest();
             }
 
-            _context.Entry(table).State = EntityState.Modified;
+            var existingTable = _context.Tables.Where(tbl => tbl.Id == id).SingleOrDefault();
+            if (existingTable == null)
+            {
+                return NotFound();
+            }    
+
+            // update fields individually if changed
+            if (table.FieldNames != null && !existingTable.FieldNames.Equals(table.FieldNames))
+            {
+                existingTable.FieldNames = table.FieldNames;
+            }
+            if (table.FieldTypes != null && !existingTable.FieldTypes.Equals(table.FieldTypes))
+            {
+                existingTable.FieldTypes = table.FieldTypes;
+            }
+            if (table.TableState != null && !existingTable.TableState.Equals(table.TableState))
+            {
+                existingTable.TableState = (TableStateType)table.TableState;
+            }
+            if (table.TablePrivacyModel != null && !existingTable.TablePrivacyModel.Equals(table.TablePrivacyModel))
+            {
+                existingTable.TablePrivacyModel = (TablePrivacyModelType)table.TablePrivacyModel;
+            }
+            if (table.TableViewMode != null && !existingTable.TableViewMode.Equals(table.TableViewMode))
+            {
+                existingTable.TableViewMode = (TableViewModeType)table.TableViewMode;
+            }
+
+            existingTable.UpdatedAt = DateTime.Now;
+            existingTable.UpdatedUserName = apiSession.UserName;
+
+            _context.Entry(existingTable).State = EntityState.Modified;
 
             try
             {
@@ -111,7 +142,7 @@ namespace TableServiceApi.Controllers
                 }
             }
 
-            return Ok(new MessageViewModel("Revoked"));
+            return Ok(new MessageViewModel("Updated"));
         }
 
         // POST: api/Tables
@@ -131,10 +162,41 @@ namespace TableServiceApi.Controllers
                 return Unauthorized();
             }
 
-            _context.Tables.Add(table);
-            await _context.SaveChangesAsync();
+            var tableName = table.TableLabel.Replace(" ", "").ToLower();
 
-            return CreatedAtAction("GetTable", new { id = table.Id }, table);
+            // Handle conflicts
+            var existingTable = _context.Tables.Where(tbl => tbl.TeamId == teamId && tbl.TableName == tableName).SingleOrDefault();
+            if (existingTable != null && existingTable.TableState != TableStateType.TableDeleted)
+            {
+                return Conflict(); // don't allow the same table to be created twice
+            } else if (existingTable != null && existingTable.TableState == TableStateType.TableDeleted)
+            {
+                // allow the existing table to be resurrected
+                existingTable.TableState = TableStateType.TableEditing;
+                existingTable.UpdatedUserName = apiSession.UserName;
+                existingTable.UpdatedAt = DateTime.Now;
+
+                _context.Entry(existingTable).State = EntityState.Modified;
+
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction("GetTable", new { id = existingTable.Id }, existingTable);
+            }
+            else
+            {
+                table.TableName = tableName;
+                table.TableState = TableStateType.TableCreated;
+                table.TablePrivacyModel = TablePrivacyModelType.Private;
+                table.UpdatedAt = DateTime.Now;
+                table.UpdatedUserName = apiSession.UserName;
+                table.CreatedAt = DateTime.Now;
+                table.CreatedUserName = apiSession.UserName;
+
+                _context.Tables.Add(table);
+                await _context.SaveChangesAsync();
+
+                return CreatedAtAction("GetTable", new { id = table.Id }, table);
+            }
         }
 
         // DELETE: api/Tables/5
@@ -163,7 +225,7 @@ namespace TableServiceApi.Controllers
             _context.Tables.Remove(table);
             await _context.SaveChangesAsync();
 
-            return Ok(new MessageViewModel("Revoked"));
+            return Ok(new MessageViewModel("Deleted"));
         }
 
         private bool TableExists(int id)

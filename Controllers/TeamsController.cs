@@ -99,6 +99,9 @@ namespace TableServiceApi.Controllers
                 return BadRequest();
             }
 
+            team.UpdatedAt = DateTime.Now;
+            team.UpdatedUserName = apiSession.UserName;
+
             _context.Entry(team).State = EntityState.Modified;
 
             try
@@ -134,6 +137,17 @@ namespace TableServiceApi.Controllers
             {
                 return Unauthorized();
             }
+
+            var existingTeam = _context.Teams.Where(tbl => tbl.TeamName == team.TeamName).SingleOrDefault();
+            if (existingTeam != null)
+            {
+                return Conflict();
+            }
+
+            team.UpdatedAt = DateTime.Now;
+            team.UpdatedUserName = apiSession.UserName;
+            team.CreatedAt = DateTime.Now;
+            team.CreatedUserName = apiSession.UserName;
 
             _context.Teams.Add(team);
             await _context.SaveChangesAsync();

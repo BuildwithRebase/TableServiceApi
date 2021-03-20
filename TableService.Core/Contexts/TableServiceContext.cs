@@ -33,11 +33,11 @@ namespace TableService.Core.Contexts
 
             User generalUser = CreateUser(2, "generaluser", "philip.munce@munceyweb.com", PasswordUtility.HashPassword("password123"), "General", "User", false, false, 2, "Test client");
 
-            Table tasksTable = CreateTable(1, 1, "Build with rebase", "Task", "Tasks", "TaskName,TaskStatus,AssignedTo,DueDate,Comments", "string,string,string,datetime,string");
+//            Table tasksTable = CreateTable(1, 1, "Build with rebase", "Task", "Tasks", "TaskName,TaskStatus,AssignedTo,DueDate,Comments", "string,string,string,datetime,string");
 
             modelBuilder.Entity<Team>().HasData(defaultTeam, childTeam);
             modelBuilder.Entity<User>().HasData(defaultUser, generalUser, michaelUser, bryanUser);
-            modelBuilder.Entity<Table>().HasData(tasksTable);
+//          modelBuilder.Entity<Table>().HasData(tasksTable);
 
   /*          modelBuilder.Entity<Plan>().HasData(
                 CreatePlan(1, 1, "Build with rebase", 1, "Free", "-", "100", "0", "0"),

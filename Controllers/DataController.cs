@@ -41,7 +41,7 @@ namespace TableServiceApi.Controllers
             _teamDbContext.Database.EnsureCreated();
 
             var apiSession = (ApiSession)HttpContext.Items["api_session"];
-            var tables = _context.Tables.Where(tbl => tbl.TeamName.ToLower() == apiSession.TeamName.ToLower()).ToList();
+            var tables = _context.Tables.Where(tbl => tbl.TeamId == apiSession.TeamId).ToList();
             
             if (tables.Count == 0)
             {
@@ -85,7 +85,7 @@ namespace TableServiceApi.Controllers
             _teamDbContext.Database.EnsureCreated();
 
             var apiSession = (ApiSession)HttpContext.Items["api_session"];
-            var table = GetTableByName(apiSession.TeamName, tableName);
+            var table = GetTableByName(apiSession.TeamId, tableName);
 
             if (table == null)
             {
@@ -117,7 +117,7 @@ namespace TableServiceApi.Controllers
             _teamDbContext.Database.EnsureCreated();
 
             var apiSession = (ApiSession)HttpContext.Items["api_session"];
-            var table = GetTableByName(apiSession.TeamName, tableName);
+            var table = GetTableByName(apiSession.TeamId, tableName);
 
             if (table == null)
             {
@@ -149,19 +149,19 @@ namespace TableServiceApi.Controllers
             _teamDbContext.Database.EnsureCreated();
 
             var apiSession = (ApiSession)HttpContext.Items["api_session"];
-            var table = GetTableByName(apiSession.TeamName, tableName);
+            var table = GetTableByName(apiSession.TeamId, tableName);
 
             if (table == null)
             {
                 return NotFound("Table: " + tableName + " not found");
             }
 
-            var tableRecord = TableUtility.CreateTableRecordFromTable(apiSession, table, data, false);
+            var tableRecord = TableUtility.CreateTableRecordFromTable(apiSession, table, data, false, null);
 
             _teamDbContext.Add(tableRecord);
             await _teamDbContext.SaveChangesAsync();
 
-            return Ok(new MessageViewModel("Revoked"));
+            return Ok(new MessageViewModel("Data record created"));
         }
 
         // PUT: api/Data/Task/5
@@ -182,14 +182,22 @@ namespace TableServiceApi.Controllers
             }
 
             var apiSession = (ApiSession)HttpContext.Items["api_session"];
-            var table = GetTableByName(apiSession.TeamName, tableName);
+            var table = GetTableByName(apiSession.TeamId, tableName);
 
             if (table == null)
             {
                 return NotFound("Table: " + tableName + " not found");
             }
 
-            var tableRecord = TableUtility.CreateTableRecordFromTable(apiSession, table, data, true);
+            var oldRecord = _teamDbContext.TableRecords
+                                .Where(tbl => tbl.Id == id)
+                                .FirstOrDefault();
+            if (oldRecord == null)
+            {
+                return NotFound();
+            }
+
+            var tableRecord = TableUtility.CreateTableRecordFromTable(apiSession, table, data, true, oldRecord);
 
             _teamDbContext.Entry(tableRecord).State = EntityState.Modified;
 
@@ -209,7 +217,7 @@ namespace TableServiceApi.Controllers
                 }
             }
 
-            return Ok(new MessageViewModel("Revoked"));
+            return Ok(new MessageViewModel("Table updated"));
         }
 
 
@@ -218,7 +226,7 @@ namespace TableServiceApi.Controllers
         public async Task<IActionResult> DeleteTable([FromRoute] string tableName, [FromRoute] int id)
         {
             var apiSession = (ApiSession)HttpContext.Items["api_session"];
-            var table = GetTableByName(apiSession.TeamName, tableName);
+            var table = GetTableByName(apiSession.TeamId, tableName);
 
             if (table == null)
             {
@@ -233,14 +241,14 @@ namespace TableServiceApi.Controllers
             }
 
             _teamDbContext.TableRecords.Remove(tableRecord);
-            await _context.SaveChangesAsync();
+            await _teamDbContext.SaveChangesAsync();
 
-            return Ok(new MessageViewModel("Revoked"));
+            return Ok(new MessageViewModel("Table row deleted"));
         }
 
-        private Table GetTableByName(string teamName, string tableName)
+        private Table GetTableByName(int teamId, string tableName)
         {
-            return _context.Tables.Where(tbl => tbl.TeamName.ToLower() == teamName.ToLower() && tbl.TableName.ToLower() == tableName.ToLower()).FirstOrDefault();
+            return _context.Tables.Where(tbl => tbl.TeamId == teamId && tbl.TableName.ToLower() == tableName.ToLower()).FirstOrDefault();
         }
 
         private bool TableRecordExists(int id)

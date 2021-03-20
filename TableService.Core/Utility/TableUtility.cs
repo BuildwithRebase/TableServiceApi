@@ -25,31 +25,38 @@ namespace TableService.Core.Utility
         /// </summary>
         /// <param name="table"></param>
         /// <returns></returns>
-        public static TableRecord CreateTableRecordFromTable(ApiSession apiSession, Table table, Dictionary<string, object> data, bool update = true)
+        public static TableRecord CreateTableRecordFromTable(ApiSession apiSession, Table table, Dictionary<string, object> data, bool update = true, TableRecord oldRecord = null)
         {
             var tableName = table.TableName;
-            var tableRecord = new TableRecord
+            var tableRecord = oldRecord ?? new TableRecord
             {
                 TeamId = apiSession.TeamId,
                 TeamName = apiSession.TeamName,
-                TableName = tableName,
-                UpdatedUserName = apiSession.UserName,
-                UpdatedAt = DateTime.Now
+                TableName = tableName
             };
 
-            if (update)
-            {
-                tableRecord.Id = ((JsonElement)data["Id"]).GetInt32();
-            }
-            else
-            {
-                tableRecord.CreatedAt = DateTime.Now;
-                tableRecord.CreatedUserName = apiSession.UserName;
-            }
-
             Type tableRecordType = typeof(TableRecord);
-            var fields = table.ToFieldDefinitions();
-            for (var i = 0; i<Math.Min(fields.Count, 5); i++)
+
+            DynamicClassUtility.SetPropertyValue(tableRecordType, tableRecord, "UpdatedUserName", apiSession.UserName);
+            DynamicClassUtility.SetPropertyValue(tableRecordType, tableRecord, "UpdatedAt", DateTime.Now);
+
+            //if (update)
+            //{
+            //    tableRecord.Id = ((JsonElement)data["Id"]).GetInt32();
+            //}
+            //else
+            //{
+            //    if (oldRecord != null)
+            //    {
+            //        DynamicClassUtility.SetPropertyValue(tableRecordType, tableRecord, "CreatedUserName", oldRecord.CreatedUserName);
+            //        DynamicClassUtility.SetPropertyValue(tableRecordType, tableRecord, "CreatedAt", oldRecord.CreatedAt);
+            //    }
+            //}
+
+            var fields = table.ToFieldDefinitions()
+                    .Where(fld => !fld.FieldName.Equals("Id") && !fld.FieldName.Equals("CreatedAt") && !fld.FieldName.Equals("CreatedUserName") && !fld.FieldName.Equals("UpdatedAt") && !fld.FieldName.Equals("UpdatedUserName"))
+                    .ToList();
+            for (var i = 0; i<fields.Count; i++)
             {
                 var field = fields[i];
                 if (data.ContainsKey(field.FieldName))
@@ -96,16 +103,18 @@ namespace TableService.Core.Utility
 
             object obj = Activator.CreateInstance(objectType);
 
-            for (var i = 0; i < Math.Min(fields.Count, 5); i++)
-            {
-                var field = fields[i];
+            int id = (int)DynamicClassUtility.GetPropertyValue(tableRecordType, record, "Id");
+            DynamicClassUtility.SetFieldValue(objectType, obj, "Id", id);
+            
+            var fields2 = fields
+                .Where(fld => !fld.FieldName.Equals("Id") && !fld.FieldName.Equals("CreatedAt") && !fld.FieldName.Equals("CreatedUserName") && !fld.FieldName.Equals("UpdatedAt") && !fld.FieldName.Equals("UpdatedUserName"))
+                .ToList();
 
-                if (field.FieldName == "Id")
-                {
-                    int value = (int)DynamicClassUtility.GetPropertyValue(tableRecordType, record, "Id");
-                    DynamicClassUtility.SetFieldValue(objectType, obj, field.FieldName, value);
-                }
-                else if (field.FieldType == "datetime")
+            for (var i = 0; i < fields2.Count; i++)
+            {
+                var field = fields2[i];
+
+                if (field.FieldType == "datetime")
                 {
                     DateTime value = (DateTime)DynamicClassUtility.GetPropertyValue(tableRecordType, record, "Field" + (i + 1) + "DateTimeValue");
                     DynamicClassUtility.SetFieldValue(objectType, obj, field.FieldName, value);
@@ -117,10 +126,30 @@ namespace TableService.Core.Utility
                 }
                 else if (field.FieldType == "number")
                 {
-                    int value = (int)DynamicClassUtility.GetPropertyValue(tableRecordType, record, "Field" + (i + 1) + "NumberValue");
-                    DynamicClassUtility.SetFieldValue(objectType, obj, field.FieldName, value);
+                    object numberObject = DynamicClassUtility.GetPropertyValue(tableRecordType, record, "Field" + (i + 1) + "NumberValue");
+                    if (numberObject == null)
+                    {
+                        DynamicClassUtility.SetFieldValue(objectType, obj, field.FieldName, 0);
+                    } else
+                    {
+                        DynamicClassUtility.SetFieldValue(objectType, obj, field.FieldName, (int)numberObject);
+                    }
+
+                    
                 }
             }
+
+            DateTime createdAt = (DateTime)DynamicClassUtility.GetPropertyValue(tableRecordType, record, "CreatedAt");
+            DynamicClassUtility.SetFieldValue(objectType, obj, "CreatedAt", createdAt);
+
+            string createdUserName = (string)DynamicClassUtility.GetPropertyValue(tableRecordType, record, "CreatedUserName");
+            DynamicClassUtility.SetFieldValue(objectType, obj, "CreatedUserName", createdUserName);
+
+            DateTime updatedAt = (DateTime)DynamicClassUtility.GetPropertyValue(tableRecordType, record, "UpdatedAt");
+            DynamicClassUtility.SetFieldValue(objectType, obj, "UpdatedAt", updatedAt);
+
+            string updatedUserName = (string)DynamicClassUtility.GetPropertyValue(tableRecordType, record, "UpdatedUserName");
+            DynamicClassUtility.SetFieldValue(objectType, obj, "UpdatedUserName", updatedUserName);
 
             return obj;
         }
