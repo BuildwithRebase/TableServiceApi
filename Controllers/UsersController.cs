@@ -14,6 +14,7 @@ using TableServiceApi.Filters;
 using Microsoft.AspNetCore.Authorization;
 using System.Text;
 using TableService.Core.Types;
+using TableServiceApi.Messages;
 
 namespace TableServiceApi.Controllers
 {
@@ -31,7 +32,7 @@ namespace TableServiceApi.Controllers
 
         // GET: api/Users
         [HttpGet]
-        public async Task<ActionResult<PagedResponseViewModel>> GetUsers([FromQuery] int? page, [FromQuery] int? pageSize)
+        public async Task<ActionResult<PagedResponse<UserViewModel>>> GetUsers([FromQuery] int? page, [FromQuery] int? pageSize)
         {
             var apiSession = (ApiSession)HttpContext.Items["api_session"];
             if (apiSession == null)
@@ -39,22 +40,25 @@ namespace TableServiceApi.Controllers
                 return Unauthorized();
             }
 
-            var teamId = apiSession.TeamId;
-
             int take = (pageSize == null) ? 10 : (int)pageSize;
             int skip = (page == null) ? 0 : ((int)page - 1) * take;
 
 
+            var teamId = apiSession.TeamId;
             int totalCount = await _context.Users.Where(user => user.TeamId == teamId).CountAsync();
             var data = await _context
                 .Users
                 .Where(user => user.TeamId == teamId)
                 .Skip(skip)
                 .Take(take)
-                .Select(u => new UserViewModel { Email = u.Email, Id = u.Id, FirstName = u.FirstName, LastName = u.LastName, TeamId = u.TeamId, UserName = u.UserName, TeamName = u.TeamName })
+                .Select(user => new UserViewModel(user.Id, user.UserName, user.Email, user.FirstName, user.LastName, user.TeamId, user.TeamName, user.CreatedAt, user.CreatedUserName, user.UpdatedAt, user.UpdatedUserName))
                 .ToListAsync();
 
-            var response = new PagedResponseViewModel(page ?? 1, pageSize ?? 10, totalCount, data, DynamicClassUtility.GetFieldDefinitions(typeof(User)));
+            int pages = PagedResponseUtility.GetPages(totalCount, take);
+            int recordStart = PagedResponseUtility.RecordStart(skip + 1, take);
+            int recordEnd = PagedResponseUtility.RecordEnd(totalCount, recordStart, take);
+
+            var response = new PagedResponse<UserViewModel>(page ?? 1, pageSize ?? 10, pages, totalCount, recordStart, recordEnd, data);
 
             return response;
         }
@@ -78,7 +82,7 @@ namespace TableServiceApi.Controllers
                 return NotFound();
             }
 
-            return new UserViewModel { Email = user.Email, Id = user.Id, FirstName = user.FirstName, LastName = user.LastName, TeamId = user.TeamId, UserName = user.UserName, TeamName = user.TeamName };
+            return new UserViewModel(user.Id, user.UserName, user.Email, user.FirstName, user.LastName, user.TeamId, user.TeamName, user.CreatedAt, user.CreatedUserName, user.UpdatedAt, user.UpdatedUserName);
         }
 
         [HttpPost]
@@ -136,6 +140,41 @@ namespace TableServiceApi.Controllers
             await _context.SaveChangesAsync();
 
             return _context.Users.Where(u => u.UserName == registerUser.UserName).Select(u => UserViewModelFromUser(u)).FirstOrDefault();
+        }
+
+        // PUT: api/Users/updateUser/5
+        // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
+        [HttpPut("updateUser/{id}")]
+        public async Task<IActionResult> PutData([FromRoute] int id, [FromBody] EditUserMessage message)
+        {
+            var apiSession = (ApiSession)HttpContext.Items["api_session"];
+
+            if (!apiSession.UserRoles.Contains("Admin"))
+            {
+                return Unauthorized();
+            }
+
+            var user = _context.Users.Where(user => user.TeamId == apiSession.TeamId && user.Id == id).SingleOrDefault();
+            if (user == null)
+            {
+                return NotFound("User not found");
+            }
+
+            if (!user.FirstName.Equals(message.FirstName))
+            {
+                user.FirstName = message.FirstName;
+            }
+            if (!user.LastName.Equals(message.LastName))
+            {
+                user.LastName = message.LastName;
+            }
+            user.UpdatedUserName = apiSession.UserName;
+            user.UpdatedAt = DateTime.Now;
+
+            _context.Entry(user).State = EntityState.Modified;
+
+            await _context.SaveChangesAsync();
+            return Ok(new MessageViewModel("User updated"));
         }
 
         [HttpPost]
@@ -227,18 +266,9 @@ namespace TableServiceApi.Controllers
             return Ok(new LogoutResponseViewModel());
         }
 
-       private static UserViewModel UserViewModelFromUser(User user)
+        private static UserViewModel UserViewModelFromUser(User user)
         {
-            return new UserViewModel 
-            { 
-                Email = user.Email, 
-                Id = user.Id, 
-                FirstName = user.FirstName, 
-                LastName = user.LastName, 
-                TeamId = user.TeamId, 
-                UserName = user.UserName, 
-                TeamName = user.TeamName 
-            };
+            return new UserViewModel(user.Id, user.UserName, user.Email, user.FirstName, user.LastName, user.TeamId, user.TeamName, user.CreatedAt, user.CreatedUserName, user.UpdatedAt, user.UpdatedUserName);
         }
 
         private static JwtUserViewModel JwtUserViewModelFromUser(User user, List<TeamTable> tables, string token)
