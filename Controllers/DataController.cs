@@ -40,7 +40,7 @@ namespace TableServiceApi.Controllers
         public async Task<ActionResult> Get()
         {
             var apiSession = (ApiSession)HttpContext.Items["api_session"];
-            var tables = _context.Tables.Where(tbl => tbl.TeamId == apiSession.TeamId).ToList();
+            var tables = await _context.Tables.Where(tbl => tbl.TeamId == apiSession.TeamId).ToListAsync();
             
             if (tables.Count == 0)
             {
@@ -95,7 +95,7 @@ namespace TableServiceApi.Controllers
             int take = (pageSize == null) ? 10 : (int)pageSize;
             int skip = (page == null) ? 0 : ((int)page - 1) * take;
 
-            var team = _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefault();
+            var team = await _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefaultAsync();
 
             string sql = "SELECT * FROM " + team.TablePrefix + "_" + table.TableName + " LIMIT " + skip + "," + take;
             string countSql = "SELECT COUNT(Id) FROM " + team.TablePrefix + "_" + table.TableName;
@@ -129,17 +129,18 @@ namespace TableServiceApi.Controllers
             var fields = table.ToFieldDefinitions();
             var objectType = DynamicClassUtility.CreateType(Char.ToUpperInvariant(tableName[0]) + tableName.Substring(1), fields);
 
-            var team = _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefault();
+            var team = await _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefaultAsync();
 
             string sql = "SELECT * FROM " + team.TablePrefix + "_" + table.TableName + " WHERE Id = @Id";
             using (var connection = new MySqlConnection(TableServiceContext.ConnectionString))
             {
-                var data = connection.QuerySingleOrDefault(sql, new { Id = id });
+                var data = await connection.QuerySingleOrDefaultAsync<TableRecord>(sql, new { Id = id });
                 if (data == null)
                 {
                     return NotFound();
                 }
-                return Ok(JsonConvert.SerializeObject(data, Formatting.Indented));
+                var record = TableUtility.MapTableRecordToObject(tableName, data, objectType, fields);
+                return Ok(JsonConvert.SerializeObject(record, Formatting.Indented));
             }
         }
 
