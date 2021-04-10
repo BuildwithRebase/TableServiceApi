@@ -30,7 +30,6 @@ namespace TableServiceApi.Controllers
             _teamDbContext = teamDbContext;
         }
 
-
         /// <summary>
         /// Gets the available tables and definitions
         /// </summary>
@@ -164,6 +163,12 @@ namespace TableServiceApi.Controllers
             return Ok(new MessageViewModel("Data record created"));
         }
 
+        [HttpPost("{tableName}/{id}/update")]
+        public async Task<IActionResult> UpdateData([FromRoute] string tableName, [FromRoute] int id, [FromBody] Dictionary<string, object> data)
+        {
+            return await this.PutData(tableName, id, data);
+        }
+
         // PUT: api/Data/Task/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{tableName}/{id}")]
@@ -220,6 +225,11 @@ namespace TableServiceApi.Controllers
             return Ok(new MessageViewModel("Table updated"));
         }
 
+        [HttpPost("{tableName}/{id}/delete")]
+        public async Task<IActionResult> PostDeleteTable([FromRoute] string tableName, [FromRoute] int id)
+        {
+            return await this.DeleteTable(tableName, id);             
+        }
 
         // DELETE: api/Data/Task/5
         [HttpDelete("{tableName}/{id}")]
