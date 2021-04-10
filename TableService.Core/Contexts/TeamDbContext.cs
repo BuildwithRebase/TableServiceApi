@@ -22,6 +22,7 @@ namespace TableServiceApi.TableService.Core.Contexts
 
             // Use Sqlite (for now)
             optionsBuilder.UseSqlite("Data Source=" + dbName + ".db");
+
         }
 
         private string FormatTeamNameAsDbName(string teamName)

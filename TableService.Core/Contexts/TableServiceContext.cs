@@ -9,6 +9,9 @@ namespace TableService.Core.Contexts
 {
     public class TableServiceContext : DbContext
     {
+        // to-do put this in the app.settings
+        public const string ConnectionString = "";
+
         public DbSet<Team> Teams { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<Table> Tables { get; set; }
@@ -18,7 +21,8 @@ namespace TableService.Core.Contexts
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
-            optionsBuilder.UseSqlite("Data Source=tableservice.db");
+            // optionsBuilder.UseSqlite("Data Source=tableservice.db");
+            optionsBuilder.UseMySQL(ConnectionString);
         }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

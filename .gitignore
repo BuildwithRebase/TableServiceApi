@@ -341,3 +341,5 @@ healthchecksdb
 
 # Build with rebase vue files
 wwwroot/admin/
+
+*.db

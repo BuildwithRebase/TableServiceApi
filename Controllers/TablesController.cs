@@ -10,6 +10,7 @@ using TableService.Core.Utility;
 using TableService.Core.Types;
 using TableServiceApi.ViewModels;
 using System;
+using MySql.Data;
 
 namespace TableServiceApi.Controllers
 {
@@ -195,6 +196,20 @@ namespace TableServiceApi.Controllers
                 _context.Tables.Add(table);
                 await _context.SaveChangesAsync();
 
+                var team = _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefault();
+
+                using (var connection = new MySql.Data.MySqlClient.MySqlConnection(TableServiceContext.ConnectionString))
+                {
+                    connection.Open();
+                    using (var command = connection.CreateCommand())
+                    {
+                        command.CommandType = System.Data.CommandType.Text;
+                        command.CommandText = GetCreateTableSql(team.TablePrefix, tableName);
+
+                        await command.ExecuteNonQueryAsync();
+                    }
+                }
+
                 return CreatedAtAction("GetTable", new { id = table.Id }, table);
             }
         }
@@ -231,6 +246,42 @@ namespace TableServiceApi.Controllers
         private bool TableExists(int id)
         {
             return _context.Tables.Any(e => e.Id == id);
+        }
+
+        private string GetCreateTableSql(string tablePrefix, string tableName)
+        {
+            return "CREATE TABLE `" + tablePrefix + "_" + tableName + @"`
+(
+	`Id` INT NOT NULL AUTO_INCREMENT,
+	`TeamId` INT NOT NULL,
+	`TeamName` TEXT,
+	`TableName` TEXT,
+	`Field1StringValue` TEXT,
+	`Field1NumberValue` INT,
+	`Field1DateTimeValue` DATETIME,
+
+	`Field2StringValue` TEXT,
+	`Field2NumberValue` INT,
+	`Field2DateTimeValue` DATETIME,
+
+		`Field3StringValue` TEXT,
+	`Field3NumberValue` INT,
+	`Field3DateTimeValue` DATETIME,
+
+		`Field4StringValue` TEXT,
+	`Field4NumberValue` INT,
+	`Field4DateTimeValue` DATETIME,
+
+	`Field5StringValue` TEXT,
+	`Field5NumberValue` INT,
+	`Field5DateTimeValue` DATETIME,
+  `CreatedUserName` text,
+  `UpdatedUserName` text,
+  `CreatedAt` datetime NOT NULL,
+  `UpdatedAt` datetime NOT NULL,
+  `DeletedAt` datetime NOT NULL,
+  PRIMARY KEY (`Id`)
+)";
         }
 
     }

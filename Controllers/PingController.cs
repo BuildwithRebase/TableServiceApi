@@ -21,16 +21,20 @@ namespace TableServiceApi.Controllers
             _context = context;
         }
 
+
         [HttpGet]
-        public ActionResult<PingResponseViewModel> GetPing([FromQuery] string createToken)
+        // public ActionResult<PingResponseViewModel> GetPing([FromQuery] string createToken)
+        public ActionResult<PingResponseViewModel> GetPing()
         {
-            if ("bC4hSZxB" == createToken)
+/*           
+ *           Uncomment this only if you want to recreate the entire database from scratch (not recommended)
+ *           if ("bC4hSZxB" == createToken)
             {
                 _context.Database.EnsureDeleted();
                 _context.Database.EnsureCreated();
 
                 return Ok(new PingResponseViewModel { Message = "Database created", Authorized = false });
-            }
+            } */
 
             var apiSession = (ApiSession)HttpContext.Items["api_session"];
             if (apiSession != null)
