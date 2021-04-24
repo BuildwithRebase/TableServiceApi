@@ -184,8 +184,10 @@ namespace TableService.Core.Services
             return await connection.UpdateAsync(subscriber);
         }
 
-        public async Task<bool> DeleteSubscriber(Subscriber subscriber)
+        public async Task<bool> DeleteSubscriber(Subscriber subscriber, Team team)
         {
+            var sql = @"DELETE FROM " + team.TablePrefix + "_subscribers WHERE Id = @Id";
+
             var connection = new MySqlConnection(TableServiceContext.ConnectionString);
             connection.Open();
 
