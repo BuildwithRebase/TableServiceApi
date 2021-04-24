@@ -140,6 +140,7 @@ namespace TableServiceApi.Controllers
             await _context.SaveChangesAsync();
 
             return _context.Users.Where(u => u.UserName == registerUser.UserName).Select(u => UserViewModelFromUser(u)).FirstOrDefault();
+  
         }
 
         // PUT: api/Users/updateUser/5
