@@ -10,31 +10,25 @@ namespace TableService.Core.Security
     /// </summary>
     public static class ClaimsIdentityFactory
     {
+        public static ClaimsIdentity ClaimsIdentityFromSubscriber(Subscriber subscriber)
+        {
+            var userIdentity = new UserIdentity(subscriber.Email);
+            return new ClaimsIdentity(userIdentity, new Claim[]
+            {
+                new Claim("user_type", "Subscriber"),
+                new Claim("team_id", subscriber.TeamId.ToString()),
+                new Claim("session_token", subscriber.SessionToken)
+            });
+        }
+
         public static ClaimsIdentity ClaimsIdentityFromUser(User user)
         {
-            var userIdentity = new UserIdentity(user.UserName);
-            if (user.IsSuperAdmin) 
-            {
-                return new ClaimsIdentity(userIdentity, new Claim[] {
-                    new Claim("team_name", user.TeamName),
-                    new Claim("user_role", "SuperAdmin"),
-                    new Claim("user_role", "Admin")
-                });
-            }
-            else if (user.IsAdmin)
-            {
-                return new ClaimsIdentity(userIdentity, new Claim[] {
-                    new Claim("team_name", user.TeamName),
-                    new Claim("user_role", "Admin")
-                });
-            }
-            else 
-            {
-                return new ClaimsIdentity(userIdentity, new Claim[] {
-                    new Claim("team_name", user.TeamName),
-                    new Claim("user_role", "General")
-                });
-            }
+            var userIdentity = new UserIdentity(user.Email);
+            return new ClaimsIdentity(userIdentity, new Claim[] {
+                new Claim("user_type", "User"),
+                new Claim("team_id", user.TeamId.ToString()),
+                new Claim("session_token", user.SessionToken)
+            });
         }
     }
 }

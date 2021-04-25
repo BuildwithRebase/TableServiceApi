@@ -15,6 +15,8 @@ namespace TableService.Core.Models
         public bool Subscribed { get; set; }
         public DateTime LastAccessedAt { get; set; }
         public DateTime SubscribedAt { get; set; }
+        public bool Locked { get; set; }
+        public int LoginAttempts { get; set; }
         public string CreatedUserName { get; set; }
         public string UpdatedUserName { get; set; }
         public DateTime CreatedAt { get; set; }

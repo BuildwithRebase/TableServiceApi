@@ -15,6 +15,7 @@ using Microsoft.AspNetCore.Authorization;
 using System.Text;
 using TableService.Core.Types;
 using TableServiceApi.Messages;
+using TableService.Core.Messages;
 
 namespace TableServiceApi.Controllers
 {
@@ -181,7 +182,7 @@ namespace TableServiceApi.Controllers
         [HttpPost]
         [AllowAnonymous]
         [Route("authenticateUser")]
-        public async Task<ActionResult<JwtUserViewModel>> PostAuthenticateUser(AuthenticateUserViewModel authenticateUser)
+        public async Task<ActionResult<LoginResponse>> PostAuthenticateUser(AuthenticateUserViewModel authenticateUser)
         {
             // validate the request
             if (string.IsNullOrEmpty(authenticateUser.UserPassword) ||
@@ -196,24 +197,36 @@ namespace TableServiceApi.Controllers
             {
                 return NotFound("Unable to logon with the credentials you provided");
             }
+            if (user.Locked)
+            {
+                return Unauthorized("Account is locked");
+            }
 
             // Authenticate the user using password
             bool valid = PasswordUtility.VerifyPassword(authenticateUser.UserPassword, user.UserPassword);
             if (!valid)
             {
+                user.LoginAttempts++;
+                user.Locked = (user.LoginAttempts >= 5);
+
+                _context.Update(user);
+                await _context.SaveChangesAsync();
+
                 return Unauthorized("Unable to logon with the credentials you provided");
             }
+
+            user.SessionToken = GuidHelper.CreateCryptographicallySecureGuid().ToString();
+            user.SessionTokenExpiry = DateTime.Now.AddMinutes(30);
+            user.LastAccessedAt = DateTime.Now;
+            user.Locked = false;
+            user.LoginAttempts = 0;
+
+            _context.Update(user);
+            await _context.SaveChangesAsync();
 
             // Get the Jwt Token
             var claimsIdentity = ClaimsIdentityFactory.ClaimsIdentityFromUser(user);
             var token = JwtUtility.GenerateToken(claimsIdentity);
-
-            // Invalidate any previous sessions
-            InvalidateSessions(user.UserName);
-
-
-            // Save the Api Session
-            CreateApiSession(user);
 
             // Save changes to the database
             await _context.SaveChangesAsync();
@@ -226,7 +239,7 @@ namespace TableServiceApi.Controllers
             HttpContext.Response.Cookies.Append("Authorization", "Bearer " + token, new CookieOptions { HttpOnly = true, SameSite = SameSiteMode.Lax });
             HttpContext.Response.Headers.Append("Token", token);
 
-            return JwtUserViewModelFromUser(user, tables.ToList(), token);
+            return new LoginResponse(token);
         }
 
         [Authorize]
@@ -270,23 +283,6 @@ namespace TableServiceApi.Controllers
         private static UserViewModel UserViewModelFromUser(User user)
         {
             return new UserViewModel(user.Id, user.UserName, user.Email, user.FirstName, user.LastName, user.TeamId, user.TeamName, user.CreatedAt, user.CreatedUserName, user.UpdatedAt, user.UpdatedUserName);
-        }
-
-        private static JwtUserViewModel JwtUserViewModelFromUser(User user, List<TeamTable> tables, string token)
-        {
-            return new JwtUserViewModel
-            {
-                Email = user.Email,
-                Id = user.Id,
-                FirstName = user.FirstName,
-                LastName = user.LastName,
-                TeamId = user.TeamId,
-                UserName = user.UserName,
-                TeamName = user.TeamName,
-                UserRoles = FormatUserRoles(user),
-                Token = token,
-                Tables = tables
-            };
         }
 
         private Team FindTeamByName(string teamName)

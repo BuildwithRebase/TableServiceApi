@@ -19,6 +19,11 @@ namespace TableService.Core.Models
         public bool IsSuperAdmin { get; set; }
         public int TeamId { get; set; }
         public string TeamName { get; set; }
+        public int LoginAttempts { get; set; }
+        public string SessionToken { get; set; }
+        public DateTime SessionTokenExpiry { get; set; }
+        public DateTime LastAccessedAt { get; set; }
+        public bool Locked { get; set; }
         public string CreatedUserName { get; set; }
         public string UpdatedUserName { get; set; }
         public DateTime CreatedAt { get; set; }

@@ -30,12 +30,12 @@ namespace TableServiceApi.Controllers
         /// </summary>
         /// <returns></returns>
         [HttpGet]
-        public async Task<ActionResult<AccountViewModel>> Get()
+        public ActionResult<AccountViewModel> Get()
         {
             var apiSession = (ApiSession)HttpContext.Items["api_session"];
 
             var team = _context.Teams.Where(table => table.Id == apiSession.TeamId).FirstOrDefault();
-            var user = _context.Users.Where(user => user.UserName == apiSession.UserName).FirstOrDefault();
+            var user = _context.Users.Where(user => user.Email == apiSession.Email).FirstOrDefault();
 
             var account = new AccountViewModel()
             {
@@ -71,17 +71,17 @@ namespace TableServiceApi.Controllers
             team.BillFlowSecret = request.BillFlowSecret;
 
             await _context.SaveChangesAsync();
-            return await Get();
+            return Get();
         }
 
         [HttpGet]
         [Authorize]
         [Route("getBillFlowHMAC")]
-        public async Task<ActionResult<MessageViewModel>> GenerateHMAC()
+        public ActionResult<MessageViewModel> GenerateHMAC()
         {
             var apiSession = (ApiSession)HttpContext.Items["api_session"];
             var billFlowSecret = _context.Teams.Where(team => team.Id == apiSession.TeamId).Select(team => team.BillFlowSecret).FirstOrDefault();
-            var email = _context.Users.Where(user => user.UserName == apiSession.UserName).Select(user => user.Email).FirstOrDefault();
+            var email = _context.Users.Where(user => user.Email == apiSession.Email).Select(user => user.Email).FirstOrDefault();
 
             var hash = CreateHMAC(email, billFlowSecret);
 

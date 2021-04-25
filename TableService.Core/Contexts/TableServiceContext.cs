@@ -15,9 +15,6 @@ namespace TableService.Core.Contexts
         public DbSet<Team> Teams { get; set; }
         public DbSet<User> Users { get; set; }
         public DbSet<Table> Tables { get; set; }
-        public DbSet<ApiSession> ApiSessions { get; set; }
-//        public DbSet<Plan> Plans { get; set; }
-//        public DbSet<Sale> Sales { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
