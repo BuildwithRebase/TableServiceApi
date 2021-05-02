@@ -27,9 +27,6 @@ namespace TableService.Core.Contexts
             Team defaultTeam = CreateTeam(1, null, "Build with rebase", true);
             Team childTeam = CreateTeam(2, 1, "Test client", false);
 
-            User defaultUser = CreateUser(1, "muncey", "philip.munce@gmail.com", PasswordUtility.HashPassword("ZfmoU98M"), "Philip", "Munce", true, true, 1, "Build with rebase");
-            User michaelUser = CreateUser(3, "michael", "Ali3nS4n@gmail.com", PasswordUtility.HashPassword("HpvpBz7H"), "Michael", "Rapson", true, true, 1, "Build with rebase");
-            User bryanUser = CreateUser(4, "bryan", "bzavestoski@gmail.com", PasswordUtility.HashPassword("muYFEB2R"), "Bryan", "Zavestoski", true, true, 1, "Build with rebase");
 
 
             User generalUser = CreateUser(2, "generaluser", "philip.munce@munceyweb.com", PasswordUtility.HashPassword("password123"), "General", "User", false, false, 2, "Test client");

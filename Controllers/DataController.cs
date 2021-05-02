@@ -24,12 +24,10 @@ namespace TableServiceApi.Controllers
     public class DataController : ControllerBase
     {
         private readonly TableServiceContext _context;
-        private readonly TeamDbContext _teamDbContext;
 
         public DataController(TableServiceContext context, TeamDbContext teamDbContext)
         {
             _context = context;
-            _teamDbContext = teamDbContext;
         }
 
         /// <summary>
@@ -95,17 +93,17 @@ namespace TableServiceApi.Controllers
             int take = (pageSize == null) ? 10 : (int)pageSize;
             int skip = (page == null) ? 0 : ((int)page - 1) * take;
 
-            var team = await _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefaultAsync();
+//            var team = await _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefaultAsync();
 
-            string sql = "SELECT * FROM " + team.TablePrefix + "_" + table.TableName + " LIMIT " + skip + "," + take;
-            string countSql = "SELECT COUNT(Id) FROM " + team.TablePrefix + "_" + table.TableName;
+            string sql = "SELECT * FROM " + apiSession.TablePrefix + "_" + table.TableName + " LIMIT " + skip + "," + take;
+            string countSql = "SELECT COUNT(Id) FROM " + apiSession.TablePrefix + "_" + table.TableName;
 
             using (var connection = new MySqlConnection(TableServiceContext.ConnectionString))
             {
-                var records = connection.Query<TableRecord>(sql).ToList();
+                var records = await connection.QueryAsync<TableRecord>(sql);
                 var data = records.Select(record => TableUtility.MapTableRecordToObject(tableName, record, objectType, fields));
 
-                int totalCount = connection.ExecuteScalar<int>(countSql);
+                int totalCount = await connection.ExecuteScalarAsync<int>(countSql);
                 var response = new PagedResponseViewModel(page ?? 1, pageSize ?? 10, totalCount, data.ToList(), fields);
 
                 return Ok(JsonConvert.SerializeObject(response, Formatting.Indented));
@@ -116,8 +114,6 @@ namespace TableServiceApi.Controllers
         [Route("{tableName}/{id}")]
         public async Task<ActionResult> Get([FromRoute] string tableName, [FromRoute] int id)
         {
-            _teamDbContext.Database.EnsureCreated();
-
             var apiSession = (ApiSession)HttpContext.Items["api_session"];
             var table = GetTableByName(apiSession.TeamId, tableName);
 
@@ -129,9 +125,9 @@ namespace TableServiceApi.Controllers
             var fields = table.ToFieldDefinitions();
             var objectType = DynamicClassUtility.CreateType(Char.ToUpperInvariant(tableName[0]) + tableName.Substring(1), fields);
 
-            var team = await _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefaultAsync();
+//            var team = await _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefaultAsync();
 
-            string sql = "SELECT * FROM " + team.TablePrefix + "_" + table.TableName + " WHERE Id = @Id";
+            string sql = "SELECT * FROM " + apiSession.TablePrefix + "_" + table.TableName + " WHERE Id = @Id";
             using (var connection = new MySqlConnection(TableServiceContext.ConnectionString))
             {
                 var data = await connection.QuerySingleOrDefaultAsync<TableRecord>(sql, new { Id = id });
@@ -151,8 +147,6 @@ namespace TableServiceApi.Controllers
         [Route("{tableName}")]
         public async Task<ActionResult> PostData([FromRoute] string tableName, [FromBody] Dictionary<string, object> data)
         {
-            _teamDbContext.Database.EnsureCreated();
-
             var apiSession = (ApiSession)HttpContext.Items["api_session"];
             var table = GetTableByName(apiSession.TeamId, tableName);
 
@@ -163,14 +157,13 @@ namespace TableServiceApi.Controllers
 
             var tableRecord = TableUtility.CreateTableRecordFromTable(apiSession, table, data, false, null);
 
-            var team = await _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefaultAsync();
-            var sql = GetInsertSql(team.Id, team.TeamName, team.TablePrefix, table.TableName);
+//            var team = await _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefaultAsync();
+            var sql = GetInsertSql(apiSession.TeamId, apiSession.TeamName, apiSession.TablePrefix, table.TableName);
             using (var connection = new MySqlConnection(TableServiceContext.ConnectionString))
             {
                 connection.Open();
-                connection.Execute(sql, tableRecord);
+                await connection.ExecuteAsync(sql, tableRecord);
                 return Ok(new MessageViewModel("Data record created"));
-
             }
         }
 
@@ -204,14 +197,14 @@ namespace TableServiceApi.Controllers
             {
                 return NotFound("Table: " + tableName + " not found");
             }
-            var team = await _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefaultAsync();
+//            var team = await _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefaultAsync();
 
             using (var connection = new MySqlConnection(TableServiceContext.ConnectionString))
             {
                 connection.Open();
 
 
-                var oldRecord = await connection.QuerySingleOrDefaultAsync<TableRecord>("SELECT * FROM " + team.TablePrefix + "_" + table.TableName + " WHERE Id = @Id", new { Id = id });
+                var oldRecord = await connection.QuerySingleOrDefaultAsync<TableRecord>("SELECT * FROM " + apiSession.TablePrefix + "_" + table.TableName + " WHERE Id = @Id", new { Id = id });
                 if (oldRecord == null)
                 {
                     return NotFound();
@@ -219,7 +212,7 @@ namespace TableServiceApi.Controllers
 
                 var tableRecord = TableUtility.CreateTableRecordFromTable(apiSession, table, data, true, oldRecord);
 
-                var sql = GetUpdateSql(team.TablePrefix, table.TableName);
+                var sql = GetUpdateSql(apiSession.TablePrefix, table.TableName);
                 connection.Execute(sql, tableRecord);
                 return Ok(new MessageViewModel("Data record updated"));
             }
@@ -243,18 +236,18 @@ namespace TableServiceApi.Controllers
                 return NotFound("Table: " + tableName + " not found");
             }
 
-            var team = await _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefaultAsync();
+//            var team = await _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefaultAsync();
             using (var connection = new MySqlConnection(TableServiceContext.ConnectionString))
             {
                 connection.Open();
 
-                var oldRecord = await connection.QuerySingleOrDefaultAsync<TableRecord>("SELECT * FROM " + team.TablePrefix + "_" + table.TableName + " WHERE Id = @Id", new { Id = id });
+                var oldRecord = await connection.QuerySingleOrDefaultAsync<TableRecord>("SELECT * FROM " + apiSession.TablePrefix + "_" + table.TableName + " WHERE Id = @Id", new { Id = id });
                 if (oldRecord == null)
                 {
                     return NotFound();
                 }
 
-                var sql = "DELETE FROM " + team.TablePrefix + "_" + table.TableName + " WHERE Id = @Id";
+                var sql = "DELETE FROM " + apiSession.TablePrefix + "_" + table.TableName + " WHERE Id = @Id";
                 connection.Execute(sql, new { Id = id });
                 return Ok(new MessageViewModel("Data record deleted"));
             }
@@ -263,11 +256,6 @@ namespace TableServiceApi.Controllers
         private Table GetTableByName(int teamId, string tableName)
         {
             return _context.Tables.Where(tbl => tbl.TeamId == teamId && tbl.TableName.ToLower() == tableName.ToLower()).FirstOrDefault();
-        }
-
-        private bool TableRecordExists(int id)
-        {
-            return _teamDbContext.TableRecords.Any(e => e.Id == id);
         }
 
         private string GetInsertSql(int teamId, string teamName, string tablePrefix, string tableName)

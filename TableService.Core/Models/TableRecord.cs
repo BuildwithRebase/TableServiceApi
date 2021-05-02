@@ -6,6 +6,7 @@ namespace TableService.Core.Models
     {
         public int Id { get; set; }
         public int TeamId { get; set; }
+        public int SubscriberId { get; set; }
         public string TeamName { get; set; }
         public string TableName { get; set; }
         public string Field1StringValue { get; set; }

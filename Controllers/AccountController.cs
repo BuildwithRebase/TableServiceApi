@@ -52,8 +52,7 @@ namespace TableServiceApi.Controllers
                 ContactEmail = team.ContactEmail,
                 BillFlowSecret = team.BillFlowSecret,
                 IsAdmin = team.IsAdmin,
-                TablePrefix = team.TablePrefix,
-                UserRole = apiSession.UserRoles
+                TablePrefix = team.TablePrefix
             };
 
             return Ok(account);

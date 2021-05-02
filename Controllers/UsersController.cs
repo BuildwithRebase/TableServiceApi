@@ -16,6 +16,7 @@ using System.Text;
 using TableService.Core.Types;
 using TableServiceApi.Messages;
 using TableService.Core.Messages;
+using TableService.Core.Services;
 
 namespace TableServiceApi.Controllers
 {
@@ -111,6 +112,9 @@ namespace TableServiceApi.Controllers
             {
                 isAdmin = true;
                 team = CreateTeam(registerUser.TeamName, 1, registerUser.Email, registerUser.UserName);
+
+                SubscriberService subscriberService = new SubscriberService();
+                await subscriberService.CreateTable(team.TablePrefix);
             }
 
             User user = new User
@@ -151,7 +155,7 @@ namespace TableServiceApi.Controllers
         {
             var apiSession = (ApiSession)HttpContext.Items["api_session"];
 
-            if (!apiSession.UserRoles.Contains("Admin"))
+            if (!apiSession.IsAdmin)
             {
                 return Unauthorized();
             }
@@ -170,7 +174,7 @@ namespace TableServiceApi.Controllers
             {
                 user.LastName = message.LastName;
             }
-            user.UpdatedUserName = apiSession.UserName;
+            user.UpdatedUserName = apiSession.Email;
             user.UpdatedAt = DateTime.Now;
 
             _context.Entry(user).State = EntityState.Modified;
@@ -239,7 +243,7 @@ namespace TableServiceApi.Controllers
             HttpContext.Response.Cookies.Append("Authorization", "Bearer " + token, new CookieOptions { HttpOnly = true, SameSite = SameSiteMode.Lax });
             HttpContext.Response.Headers.Append("Token", token);
 
-            return new LoginResponse(token);
+            return new LoginResponse(token, user.Id, user.Email, user.FirstName, user.LastName, user.TeamId, user.TeamName, tables.ToList());
         }
 
         [Authorize]
@@ -273,8 +277,12 @@ namespace TableServiceApi.Controllers
                 return Unauthorized();
             }
 
-            InvalidateSessions(apiSession.UserName);
-            await _context.SaveChangesAsync();
+            var user = await _context.Users.Where(user => user.Email == apiSession.Email && user.TeamId == apiSession.TeamId).FirstOrDefaultAsync();
+            if (user != null)
+            {
+                user.SessionToken = "";
+                await _context.SaveChangesAsync();
+            }
 
             HttpContext.Response.Cookies.Delete("Authorization", new CookieOptions { HttpOnly = true });
             return Ok(new LogoutResponseViewModel());
@@ -330,41 +338,6 @@ namespace TableServiceApi.Controllers
         private User FindUserByEmail(string email)
         {
             return _context.Users.Where(u => u.Email == email).FirstOrDefault();
-        }
-
-        /// <summary>
-        /// Invalidate any old sessions
-        /// </summary>
-        /// <param name="userName"></param>
-        private void InvalidateSessions(string userName)
-        {
-            var sessions = _context.ApiSessions.Where(session => session.UserName == userName && session.IsActive).ToList();
-            if (sessions.Count == 0)
-            {
-                return;
-            }
-            foreach (var session in sessions)
-            {
-                session.IsActive = false;
-
-                _context.ApiSessions.Update(session);
-            }
-        }
-
-        private void CreateApiSession(User user)
-        {
-            ApiSession session = new ApiSession
-            {
-                UserName = user.UserName,
-                TeamId = user.TeamId,
-                TeamName = user.TeamName,
-                IsActive = true,
-                CreatedAt = DateTime.Now
-            };
-
-            session.UserRoles = FormatUserRoles(user);
-
-            _context.ApiSessions.Add(session);
         }
 
         private static string FormatUserRoles(User user)

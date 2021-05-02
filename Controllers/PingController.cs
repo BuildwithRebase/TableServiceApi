@@ -37,14 +37,7 @@ namespace TableServiceApi.Controllers
             } */
 
             var apiSession = (ApiSession)HttpContext.Items["api_session"];
-            if (apiSession != null)
-            {
-                return Ok(new PingResponseViewModel { Message = "ok", Authorized = apiSession.IsActive });
-            }
-            else
-            {
-                return Ok(new PingResponseViewModel { Message = "ok", Authorized = false });
-            }            
+            return Ok(new PingResponseViewModel { Message = "ok", Authorized = (apiSession != null) });
         }
     }
 }

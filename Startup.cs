@@ -22,6 +22,7 @@ using Swashbuckle.AspNetCore.Filters;
 using TableServiceApi.TableService.Core.Contexts;
 using Microsoft.Extensions.FileProviders;
 using System.IO;
+using TableService.Core.Services;
 
 namespace TableServiceApi
 {
@@ -61,6 +62,8 @@ namespace TableServiceApi
             services.AddHttpContextAccessor();
             services.AddDbContext<TableServiceContext>();
             services.AddDbContext<TeamDbContext>();
+            services.AddScoped<ISubscriberService, SubscriberService>();
+            services.AddScoped<IReaderService, ReaderService>();
             var tokenKey = Configuration.GetValue<string>("TokenKey");
             var key = Encoding.ASCII.GetBytes(tokenKey);
             

@@ -84,7 +84,7 @@ namespace TableServiceApi.Controllers
             }
 
             var teamId = apiSession.TeamId;
-            if (!apiSession.UserRoles.Contains("SuperAdmin") && teamId != table.TeamId)
+            if (!apiSession.IsSuperAdmin && teamId != table.TeamId)
             {
                 return Unauthorized();
             }
@@ -115,7 +115,7 @@ namespace TableServiceApi.Controllers
             }
             if (table.TablePrivacyModel != null && !existingTable.TablePrivacyModel.Equals(table.TablePrivacyModel))
             {
-                existingTable.TablePrivacyModel = (TablePrivacyModelType)table.TablePrivacyModel;
+                existingTable.TablePrivacyModel = (int)table.TablePrivacyModel;
             }
             if (table.TableViewMode != null && !existingTable.TableViewMode.Equals(table.TableViewMode))
             {
@@ -123,7 +123,7 @@ namespace TableServiceApi.Controllers
             }
 
             existingTable.UpdatedAt = DateTime.Now;
-            existingTable.UpdatedUserName = apiSession.UserName;
+            existingTable.UpdatedUserName = apiSession.Email;
 
             _context.Entry(existingTable).State = EntityState.Modified;
 
@@ -158,7 +158,7 @@ namespace TableServiceApi.Controllers
             }
 
             var teamId = apiSession.TeamId;
-            if (!apiSession.UserRoles.Contains("SuperAdmin") && teamId != table.TeamId)
+            if (!apiSession.IsSuperAdmin && teamId != table.TeamId)
             {
                 return Unauthorized();
             }
@@ -174,7 +174,7 @@ namespace TableServiceApi.Controllers
             {
                 // allow the existing table to be resurrected
                 existingTable.TableState = TableStateType.TableEditing;
-                existingTable.UpdatedUserName = apiSession.UserName;
+                existingTable.UpdatedUserName = apiSession.Email;
                 existingTable.UpdatedAt = DateTime.Now;
 
                 _context.Entry(existingTable).State = EntityState.Modified;
@@ -187,16 +187,16 @@ namespace TableServiceApi.Controllers
             {
                 table.TableName = tableName;
                 table.TableState = TableStateType.TableCreated;
-                table.TablePrivacyModel = TablePrivacyModelType.Private;
+                table.TablePrivacyModel = 2;
                 table.UpdatedAt = DateTime.Now;
-                table.UpdatedUserName = apiSession.UserName;
+                table.UpdatedUserName = apiSession.Email;
                 table.CreatedAt = DateTime.Now;
-                table.CreatedUserName = apiSession.UserName;
+                table.CreatedUserName = apiSession.Email;
 
                 _context.Tables.Add(table);
                 await _context.SaveChangesAsync();
 
-                var team = _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefault();
+//                var team = _context.Teams.Where(t => t.Id == apiSession.TeamId).SingleOrDefault();
 
                 using (var connection = new MySql.Data.MySqlClient.MySqlConnection(TableServiceContext.ConnectionString))
                 {
@@ -204,7 +204,7 @@ namespace TableServiceApi.Controllers
                     using (var command = connection.CreateCommand())
                     {
                         command.CommandType = System.Data.CommandType.Text;
-                        command.CommandText = GetCreateTableSql(team.TablePrefix, tableName);
+                        command.CommandText = GetCreateTableSql(apiSession.TablePrefix, tableName);
 
                         await command.ExecuteNonQueryAsync();
                     }
@@ -232,7 +232,7 @@ namespace TableServiceApi.Controllers
                 return NotFound();
             }
 
-            if (!apiSession.UserRoles.Contains("SuperAdmin") && teamId != table.TeamId)
+            if (!apiSession.IsSuperAdmin && teamId != table.TeamId)
             {
                 return Unauthorized();
             }
@@ -254,6 +254,7 @@ namespace TableServiceApi.Controllers
 (
 	`Id` INT NOT NULL AUTO_INCREMENT,
 	`TeamId` INT NOT NULL,
+    `SubscriberId` INT NULL,
 	`TeamName` TEXT,
 	`TableName` TEXT,
 	`Field1StringValue` TEXT,

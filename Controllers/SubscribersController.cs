@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using TableService.Core.Exceptions;
 using TableService.Core.Messages;
@@ -14,14 +15,14 @@ namespace TableServiceApi.Controllers
     [ApiController]
     public class SubscribersController : ControllerBase
     {
-        private SubscriberService subscriberService;
+        private ISubscriberService subscriberService;
 
-        public SubscribersController(SubscriberService subscriberService)
+        public SubscribersController(ISubscriberService subscriberService)
         {
             this.subscriberService = subscriberService;
         }
 
-        [HttpPost("subscribe")]
+        [HttpPost("actions/subscribe")]
         public async Task<ActionResult<SubscribeResponse>> Subscribe(SubscribeUserRequest request)
         {
             try
@@ -34,13 +35,19 @@ namespace TableServiceApi.Controllers
             }
         }
 
-        [HttpPost("unsubscribe")]
+        [HttpPost("actions/unsubscribe")]
         [Authorize]
         public async Task<ActionResult<bool>> Unsubscribe(UnsubscribeUserRequest request)
         {
             try
             {
-                return await subscriberService.Unsubscribe(request);
+                var apiSession = (ApiSession)HttpContext.Items["api_session"];
+                if (apiSession == null || !apiSession.IsSubscriber)
+                {
+                    return Unauthorized();
+                }
+
+                return await subscriberService.Unsubscribe(request, apiSession);
             }
             catch (MyHttpException ex)
             {
@@ -48,13 +55,13 @@ namespace TableServiceApi.Controllers
             }
         }
 
-        [HttpPost("login")]
+        [HttpPost("actions/login")]
         public async Task<ActionResult<LoginResponse>> Login(SubscriberLoginRequest request)
         {
             try
             {
                 var response = await subscriberService.Login(request);
-                HttpContext.Response.Cookies.Append("Authorization", "Bearer " + response.jwt, new CookieOptions { HttpOnly = true, SameSite = SameSiteMode.Lax });
+                HttpContext.Response.Cookies.Append("Authorization", "Bearer " + response.Jwt, new CookieOptions { HttpOnly = true, SameSite = SameSiteMode.Lax });
                 return response;
             }
             catch (MyHttpException ex)
@@ -63,97 +70,231 @@ namespace TableServiceApi.Controllers
             }
         }
 
-        [HttpPost("change-password")]
+        [HttpPost("actions/logout")]
+        public async Task<ActionResult<bool>> Logout()
+        {
+            try
+            {
+                var apiSession = (ApiSession)HttpContext.Items["api_session"];
+                if (apiSession == null || !apiSession.IsSubscriber)
+                {
+                    return Unauthorized();
+                }
+                var result = await subscriberService.Logout(apiSession);
+                HttpContext.Response.Cookies.Append("Authorization", "", new CookieOptions { HttpOnly = true, SameSite = SameSiteMode.Lax });
+                return result;
+            }
+            catch (MyHttpException ex)
+            {
+                return StatusCode(ex.HttpStatusCode, ex.Message);
+            }
+        }
+
+        [HttpPost("actions/change-password")]
         [Authorize]
         public async Task<ActionResult<ChangePasswordResponse>> ChangePassword(SubscriberChangePasswordRequest request)
         {
             try
             {
-                return await subscriberService.ChangePassword(request);
+                var apiSession = (ApiSession)HttpContext.Items["api_session"];
+                if (apiSession == null || !apiSession.IsSubscriber)
+                {
+                    return Unauthorized();
+                }
+
+                return await subscriberService.ChangePassword(request, apiSession);
             }
             catch (MyHttpException ex)
             {
                 return StatusCode(ex.HttpStatusCode, ex.Message);
             }
-
         }
 
-        [HttpGet("")]
+        [HttpGet("members")]
         [Authorize]
         public async Task<ActionResult<PagedResponse<SubscriberListResponse>>> GetSubscribers([FromQuery] int? page, [FromQuery] int? pageSize)
         {
             try
             {
-                return await subscriberService.GetSubscribers(null, page, page);
+                var apiSession = (ApiSession)HttpContext.Items["api_session"];
+                if (apiSession == null || apiSession.IsSubscriber)
+                {
+                    return Unauthorized();
+                }
+
+                return await subscriberService.GetSubscribers(apiSession.TablePrefix, page, pageSize);
             }
             catch (MyHttpException ex)
             {
                 return StatusCode(ex.HttpStatusCode, ex.Message);
             }
-
         }
 
-        [HttpGet("{id}")]
+        [HttpGet("members/{id}")]
         [Authorize]
         public async Task<ActionResult<SubscriberDetailResponse>> GetSubscriber(int id)
         {
             try
             {
-                return await subscriberService.GetSubscriberById(null, id);
+                var apiSession = (ApiSession)HttpContext.Items["api_session"];
+                if (apiSession == null || apiSession.IsSubscriber)
+                {
+                    return Unauthorized();
+                }
+
+                return await subscriberService.GetSubscriberById(apiSession, id);
             }
             catch (MyHttpException ex)
             {
                 return StatusCode(ex.HttpStatusCode, ex.Message);
             }
-
         }
 
-        [HttpPost]
+        [HttpPost("members")]
         [Authorize]
-        public async Task<ActionResult<SubscriberDetailResponse>> CreateSubscriber(Subscriber subscriber)
+        public async Task<ActionResult<SubscriberDetailResponse>> CreateSubscriber(SubscriberAddRequest request)
         {
             try
             {
-                int id = await subscriberService.CreateSubscriber(subscriber, null);
+                var apiSession = (ApiSession)HttpContext.Items["api_session"];
+                if (apiSession == null || apiSession.IsSubscriber)
+                {
+                    return Unauthorized();
+                }
+
+                int id = await subscriberService.CreateSubscriber(apiSession, request);
                 return await GetSubscriber(id);
             }
             catch (MyHttpException ex)
             {
                 return StatusCode(ex.HttpStatusCode, ex.Message);
             }
-
         }
 
-        [HttpPost]
+        [HttpPut("members/{id}")]
         [Authorize]
-        public async Task<ActionResult<SubscriberDetailResponse>> UpdateSubscriber(Subscriber subscriber)
+        public async Task<ActionResult<SubscriberDetailResponse>> UpdateSubscriber([FromRoute] int id, SubscriberUpdateRequest request)
         {
             try
             {
-                await subscriberService.UpdateSubscriber(subscriber, null);
-                return await GetSubscriber(subscriber.Id);
+                var apiSession = (ApiSession)HttpContext.Items["api_session"];
+                if (apiSession == null || apiSession.IsSubscriber)
+                {
+                    return Unauthorized();
+                }
+
+                await subscriberService.UpdateSubscriber(apiSession, id, request);
+                Subscriber subscriber = await subscriberService.GetSubscriberByEmail(apiSession.TablePrefix, request.Email);
+
+                return SubscriberService.MapDetailResponseFromSubscriber(subscriber);
             }
             catch (MyHttpException ex)
             {
                 return StatusCode(ex.HttpStatusCode, ex.Message);
             }
-
         }
 
-        [HttpDelete]
+        [HttpPut("members-reset-password/{id}")]
         [Authorize]
-        public async Task<ActionResult<bool>> DeleteSubscriber(Subscriber subscriber)
+        public async Task<ActionResult<SubscriberDetailResponse>> ResetSubscriberPassword([FromRoute] int id, SubscriberResetPasswordRequest request)
         {
             try
             {
-                await subscriberService.DeleteSubscriber(subscriber, null);
+                var apiSession = (ApiSession)HttpContext.Items["api_session"];
+                if (apiSession == null || apiSession.IsSubscriber)
+                {
+                    return Unauthorized();
+                }
+
+                await subscriberService.ResetSubscriberPassword(apiSession, id, request);
+
+                return await subscriberService.GetSubscriberById(apiSession, id);
+            }
+            catch (MyHttpException ex)
+            {
+                return StatusCode(ex.HttpStatusCode, ex.Message);
+            }
+        }
+
+        [HttpDelete("members/{id}")]
+        [Authorize]
+        public async Task<ActionResult<bool>> DeleteSubscriber(int id)
+        {
+            try
+            {
+                var apiSession = (ApiSession)HttpContext.Items["api_session"];
+                if (apiSession == null || apiSession.IsSubscriber)
+                {
+                    return Unauthorized();
+                }
+
+                await subscriberService.DeleteSubscriber(id, apiSession.TablePrefix);
                 return true;
             }
             catch (MyHttpException ex)
             {
                 return StatusCode(ex.HttpStatusCode, ex.Message);
             }
+        }
 
+        [HttpPost("forms/{tableName}")]
+        [Authorize]
+        public async Task<ActionResult<int>> SubmitForm([FromRoute]string tableName, [FromBody] Dictionary<string, object> data)
+        {
+            try
+            {
+                var apiSession = (ApiSession)HttpContext.Items["api_session"];
+                if (apiSession == null || !apiSession.IsSubscriber)
+                {
+                    return Unauthorized();
+                }
+
+                return await subscriberService.SubmitForm(apiSession, tableName, data);
+            }
+            catch (MyHttpException ex)
+            {
+                return StatusCode(ex.HttpStatusCode, ex.Message);
+            }
+        }
+
+        [HttpGet("forms/{tableName}")]
+        [Authorize]
+        public async Task<ActionResult<PagedResponse<Dictionary<string,object>>>> GetForms([FromRoute] string tableName, [FromQuery] int? page, [FromQuery] int? pageSize, [FromQuery] string select, [FromQuery] string filter)
+        {
+            try
+            {
+                var apiSession = (ApiSession)HttpContext.Items["api_session"];
+                if (apiSession == null || !apiSession.IsSubscriber)
+                {
+                    return Unauthorized();
+                }
+
+                return await subscriberService.GetForms(apiSession, tableName, page, pageSize, select, filter);
+            }
+            catch (MyHttpException ex)
+            {
+                return StatusCode(ex.HttpStatusCode, ex.Message);
+            }
+        }
+
+        [HttpGet("forms/{tableName}/{id}")]
+        [Authorize]
+        public async Task<ActionResult<Dictionary<string, object>>> GetForm([FromRoute] string tableName, [FromRoute] int id)
+        {
+            try
+            {
+                var apiSession = (ApiSession)HttpContext.Items["api_session"];
+                if (apiSession == null || !apiSession.IsSubscriber)
+                {
+                    return Unauthorized();
+                }
+
+                return await subscriberService.GetForm(apiSession, tableName, id);
+            }
+            catch (MyHttpException ex)
+            {
+                return StatusCode(ex.HttpStatusCode, ex.Message);
+            }
         }
     }
 }

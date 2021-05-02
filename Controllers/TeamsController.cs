@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using TableService.Core.Contexts;
 using TableService.Core.Models;
+using TableService.Core.Services;
 using TableService.Core.Utility;
 using TableServiceApi.Filters;
 using TableServiceApi.Messages;
@@ -22,10 +23,12 @@ namespace TableServiceApi.Controllers
     public class TeamsController : ControllerBase
     {
         private readonly TableServiceContext _context;
+        private readonly SubscriberService subscriberService;
 
         public TeamsController(TableServiceContext context)
         {
             _context = context;
+            subscriberService = new SubscriberService();
         }
 
         // GET: api/Teams
@@ -42,7 +45,7 @@ namespace TableServiceApi.Controllers
             int take = (pageSize == null) ? 10 : (int)pageSize;
             int skip = (page == null) ? 0 : ((int)page - 1) * take;
 
-            if (apiSession.UserRoles.Contains("SuperAdmin"))
+            if (apiSession.IsSuperAdmin)
             {
                 int totalCount = await _context.Teams.CountAsync();
                 var data = await _context.Teams.Skip(skip).Take(take).ToListAsync();
@@ -71,7 +74,7 @@ namespace TableServiceApi.Controllers
             {
                 return Unauthorized();
             }
-            if (!apiSession.UserRoles.Contains("SuperAdmin") && apiSession.TeamId != id)
+            if (!apiSession.IsSuperAdmin && apiSession.TeamId != id)
             {
                 return Unauthorized();
             }
@@ -99,7 +102,7 @@ namespace TableServiceApi.Controllers
 
             if (apiSession.TeamId != id)
             {
-                if (!apiSession.UserRoles.Contains("SuperAdmin"))
+                if (!apiSession.IsSuperAdmin)
                 {
                     return Unauthorized();
                 }
@@ -128,7 +131,7 @@ namespace TableServiceApi.Controllers
             }
 
             team.UpdatedAt = DateTime.Now;
-            team.UpdatedUserName = apiSession.UserName;
+            team.UpdatedUserName = apiSession.Email;
 
             _context.Entry(team).State = EntityState.Modified;
 
@@ -146,7 +149,7 @@ namespace TableServiceApi.Controllers
             {
                 return Unauthorized();
             }
-            if (apiSession.TeamId == 1 && !apiSession.UserRoles.Contains("SuperAdmin"))
+            if (apiSession.TeamId == 1 && !apiSession.IsSuperAdmin)
             {
                 return Unauthorized();
             }
@@ -181,12 +184,14 @@ namespace TableServiceApi.Controllers
             }
 
             team.UpdatedAt = DateTime.Now;
-            team.UpdatedUserName = apiSession.UserName;
+            team.UpdatedUserName = apiSession.Email;
             team.CreatedAt = DateTime.Now;
-            team.CreatedUserName = apiSession.UserName;
+            team.CreatedUserName = apiSession.Email;
 
             _context.Teams.Add(team);
             await _context.SaveChangesAsync();
+
+            await subscriberService.CreateTable(team.TablePrefix);
 
             return CreatedAtAction("GetTeam", new { id = team.Id }, team);
         }
@@ -200,7 +205,7 @@ namespace TableServiceApi.Controllers
             {
                 return Unauthorized();
             }
-            if (!apiSession.UserRoles.Contains("SuperAdmin"))
+            if (!apiSession.IsSuperAdmin)
             {
                 return Unauthorized();
             }

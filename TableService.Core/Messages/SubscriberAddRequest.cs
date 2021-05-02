@@ -5,7 +5,5 @@ using System.Threading.Tasks;
 
 namespace TableService.Core.Messages
 {
-    public class UnsubscribeResponse
-    {
-    }
+    public record SubscriberAddRequest(string Email, string FirstName, string LastName, string Password, string ConfirmPassword);
 }

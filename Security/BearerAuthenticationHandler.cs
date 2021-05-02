@@ -92,14 +92,17 @@ namespace TableService.Core.Security
 
         private async Task<ApiSession> ValidateSubscriberToken(string email, int teamId, string sessionToken)
         {
-            var sql = @"SELECT * FROM Subscribers WHERE Email = @Email AND TeamId = @TeamId AND SessionToken = @SessionToken";
+
+            var team = await GetTeamAsync(teamId);
+
+            var sql = string.Format(@"SELECT * FROM {0}_subscribers WHERE Email = @Email AND TeamId = @TeamId AND SessionToken = @SessionToken", team.TablePrefix);
             using var connection = new MySqlConnection(TableServiceContext.ConnectionString);
             connection.Open();
 
             var subscriber = await connection.QueryFirstOrDefaultAsync<User>(sql, new { Email = email, TeamId = teamId, SessionToken = sessionToken });
             if (subscriber != null && !subscriber.Locked && subscriber.SessionTokenExpiry >= DateTime.Now)
             {
-                var team = await GetTeamAsync(teamId);
+
                 var apiSession = new ApiSession(email, subscriber.FirstName + " " + subscriber.LastName, subscriber.TeamId, 
                     team.TeamName, team.TablePrefix, true, subscriber.IsSuperAdmin, subscriber.IsAdmin);
                 return apiSession;

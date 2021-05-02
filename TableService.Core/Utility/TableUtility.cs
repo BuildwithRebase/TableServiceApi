@@ -37,7 +37,7 @@ namespace TableService.Core.Utility
 
             Type tableRecordType = typeof(TableRecord);
 
-            DynamicClassUtility.SetPropertyValue(tableRecordType, tableRecord, "UpdatedUserName", apiSession.UserName);
+            DynamicClassUtility.SetPropertyValue(tableRecordType, tableRecord, "UpdatedUserName", apiSession.Email);
             DynamicClassUtility.SetPropertyValue(tableRecordType, tableRecord, "UpdatedAt", DateTime.Now);
 
             //if (update)
